@@ -1,0 +1,64 @@
+<script type="text/javascript">
+  RED.nodes.registerType("context-profiler", {
+    category: "system",
+    color: "#E8DAEF",
+    defaults: {
+      name: { value: "" },
+      scope: { value: "both" },
+      outputMode: { value: "replace" },
+      maxKeys: { value: 25, validate: RED.validators.number() },
+      maxDepth: { value: 8, validate: RED.validators.number() },
+      maxEntries: { value: 10000, validate: RED.validators.number() },
+      excludePattern: { value: "^heapGuardianProfiler$" }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-database",
+    label: function () {
+      return this.name || "context profiler";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="context-profiler">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-scope"><i class="fa fa-crosshairs"></i> Scope</label>
+    <select id="node-input-scope" style="width:70%;">
+      <option value="flow">Flow context</option>
+      <option value="global">Global context</option>
+      <option value="both">Flow and global context</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-outputMode"><i class="fa fa-sign-out"></i> Output</label>
+    <select id="node-input-outputMode" style="width:70%;">
+      <option value="replace">Replace msg.payload with profile</option>
+      <option value="annotate">Pass through and add msg.heapGuardian.contextProfile</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxKeys"><i class="fa fa-list"></i> Top keys</label>
+    <input type="number" id="node-input-maxKeys" min="1" step="1" style="width:100px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-excludePattern"><i class="fa fa-filter"></i> Exclude</label>
+    <input type="text" id="node-input-excludePattern" placeholder="^heapGuardianProfiler$">
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxDepth"><i class="fa fa-sitemap"></i> Max depth</label>
+    <input type="number" id="node-input-maxDepth" min="1" step="1" style="width:80px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxEntries"><i class="fa fa-list"></i> Max entries</label>
+    <input type="number" id="node-input-maxEntries" min="1" step="1" style="width:100px;">
+  </div>
+</script>
+
+<script type="text/html" data-help-name="context-profiler">
+  <p>Estimates flow and global context sizes and records the largest keys by flow and profiler node.</p>
+  <p>The default exclude pattern skips the profiler's own aggregation key.</p>
+</script>

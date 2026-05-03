@@ -1,0 +1,33 @@
+<script type="text/javascript">
+  RED.nodes.registerType("heap-monitor", {
+    category: "system",
+    color: "#C7E9B0",
+    defaults: {
+      name: { value: "" },
+      includeSpaces: { value: true }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-area-chart",
+    label: function () {
+      return this.name || "heap monitor";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="heap-monitor">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-includeSpaces"><i class="fa fa-cubes"></i> Spaces</label>
+    <input type="checkbox" id="node-input-includeSpaces" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Include V8 heap space details</span>
+  </div>
+</script>
+
+<script type="text/html" data-help-name="heap-monitor">
+  <p>Emits a Node.js and V8 memory snapshot to <code>msg.payload</code>.</p>
+  <p>The same snapshot is also assigned to <code>msg.heapGuardian</code> for downstream nodes that want to preserve the original payload.</p>
+</script>

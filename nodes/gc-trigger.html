@@ -1,0 +1,51 @@
+<script type="text/javascript">
+  RED.nodes.registerType("gc-trigger", {
+    category: "system",
+    color: "#F7D6BF",
+    defaults: {
+      name: { value: "" },
+      threshold: { value: 80, validate: RED.validators.number() },
+      minInterval: { value: 60, validate: RED.validators.number() },
+      force: { value: false },
+      includeSpaces: { value: false }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-recycle",
+    label: function () {
+      return this.name || "gc trigger";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="gc-trigger">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-threshold"><i class="fa fa-tachometer"></i> Threshold</label>
+    <input type="number" id="node-input-threshold" min="0" max="100" step="1" style="width:90px;">
+    <span>% heap used</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-minInterval"><i class="fa fa-clock-o"></i> Interval</label>
+    <input type="number" id="node-input-minInterval" min="0" step="1" style="width:90px;">
+    <span>seconds minimum between GC runs</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-force"><i class="fa fa-bolt"></i> Force</label>
+    <input type="checkbox" id="node-input-force" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Ignore threshold and interval guards</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-includeSpaces"><i class="fa fa-cubes"></i> Spaces</label>
+    <input type="checkbox" id="node-input-includeSpaces" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Include V8 heap space details in result</span>
+  </div>
+</script>
+
+<script type="text/html" data-help-name="gc-trigger">
+  <p>Runs guarded manual garbage collection and emits the result to <code>msg.payload</code>.</p>
+  <p>Manual GC requires Node-RED to be started with <code>--expose-gc</code>. Without it, this node reports <code>gc-not-exposed</code> and passes the message on.</p>
+</script>

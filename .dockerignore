@@ -1,0 +1,8 @@
+.git
+node_modules
+npm-debug.log*
+*.tgz
+*.heapsnapshot
+coverage
+.nyc_output
+.DS_Store

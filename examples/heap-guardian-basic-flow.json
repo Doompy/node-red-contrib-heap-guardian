@@ -1,0 +1,124 @@
+[
+  {
+    "id": "b17a6bfe4f2c9f01",
+    "type": "tab",
+    "label": "Heap Guardian Basic",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "f46c2ed8e1c3e812",
+    "type": "inject",
+    "z": "b17a6bfe4f2c9f01",
+    "name": "sample memory",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 80,
+    "wires": [
+      [
+        "bdeaa7bd9412fa28"
+      ]
+    ]
+  },
+  {
+    "id": "bdeaa7bd9412fa28",
+    "type": "heap-monitor",
+    "z": "b17a6bfe4f2c9f01",
+    "name": "",
+    "includeSpaces": true,
+    "x": 360,
+    "y": 80,
+    "wires": [
+      [
+        "d8ab1f97b50c0800"
+      ]
+    ]
+  },
+  {
+    "id": "d8ab1f97b50c0800",
+    "type": "debug",
+    "z": "b17a6bfe4f2c9f01",
+    "name": "memory snapshot",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 610,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "d101ab3a15e8e987",
+    "type": "inject",
+    "z": "b17a6bfe4f2c9f01",
+    "name": "try gc",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 160,
+    "wires": [
+      [
+        "f40dff94c8707bfa"
+      ]
+    ]
+  },
+  {
+    "id": "f40dff94c8707bfa",
+    "type": "gc-trigger",
+    "z": "b17a6bfe4f2c9f01",
+    "name": "",
+    "threshold": 80,
+    "minInterval": 60,
+    "force": false,
+    "includeSpaces": false,
+    "x": 350,
+    "y": 160,
+    "wires": [
+      [
+        "a3fe0da8cbbf3f88"
+      ]
+    ]
+  },
+  {
+    "id": "a3fe0da8cbbf3f88",
+    "type": "debug",
+    "z": "b17a6bfe4f2c9f01",
+    "name": "gc result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 580,
+    "y": 160,
+    "wires": []
+  }
+]

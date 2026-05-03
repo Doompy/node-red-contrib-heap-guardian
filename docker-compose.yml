@@ -1,0 +1,18 @@
+services:
+  node-red:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: node-red-heap-guardian:local
+    container_name: node-red-heap-guardian
+    ports:
+      - "1880:1880"
+    environment:
+      TZ: Asia/Seoul
+      NODE_OPTIONS: "--expose-gc --max-old-space-size=1024"
+    volumes:
+      - node_red_heap_guardian_data:/data
+    restart: unless-stopped
+
+volumes:
+  node_red_heap_guardian_data:

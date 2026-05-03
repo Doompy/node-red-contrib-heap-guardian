@@ -1,0 +1,56 @@
+<script type="text/javascript">
+  RED.nodes.registerType("metrics-report", {
+    category: "system",
+    color: "#D5F5E3",
+    defaults: {
+      name: { value: "" },
+      format: { value: "json" },
+      limit: { value: 20, validate: RED.validators.number() },
+      sortBy: { value: "lastBytes" },
+      includeSpaces: { value: false }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-line-chart",
+    label: function () {
+      return this.name || "metrics report";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="metrics-report">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-format"><i class="fa fa-code"></i> Format</label>
+    <select id="node-input-format" style="width:70%;">
+      <option value="json">JSON</option>
+      <option value="prometheus">Prometheus text</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-limit"><i class="fa fa-list"></i> Limit</label>
+    <input type="number" id="node-input-limit" min="1" step="1" style="width:100px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-sortBy"><i class="fa fa-sort"></i> Sort by</label>
+    <select id="node-input-sortBy" style="width:70%;">
+      <option value="lastBytes">Last size</option>
+      <option value="maxBytes">Max size</option>
+      <option value="totalBytes">Total observed bytes</option>
+      <option value="count">Sample count</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-includeSpaces"><i class="fa fa-cubes"></i> Spaces</label>
+    <input type="checkbox" id="node-input-includeSpaces" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Include V8 heap space details in JSON output</span>
+  </div>
+</script>
+
+<script type="text/html" data-help-name="metrics-report">
+  <p>Outputs Heap Guardian memory and profiler metrics as JSON or Prometheus text.</p>
+  <p>Place it behind an HTTP In node to expose an operational metrics endpoint.</p>
+</script>

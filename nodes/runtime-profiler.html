@@ -1,0 +1,90 @@
+<script type="text/javascript">
+  RED.nodes.registerType("runtime-profiler", {
+    category: "system",
+    color: "#D6EAF8",
+    defaults: {
+      name: { value: "" },
+      enabled: { value: true },
+      direction: { value: "both" },
+      property: { value: "payload", required: true },
+      sampleRate: { value: 10, validate: RED.validators.number() },
+      minBytes: { value: 0, validate: RED.validators.number() },
+      maxDepth: { value: 6, validate: RED.validators.number() },
+      maxEntries: { value: 5000, validate: RED.validators.number() },
+      maxRecords: { value: 1000, validate: RED.validators.number() },
+      excludePackageNodes: { value: true },
+      includeNodeTypes: { value: "" },
+      excludeNodeTypes: { value: "" }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-random",
+    label: function () {
+      return this.name || "runtime profiler";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="runtime-profiler">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-enabled"><i class="fa fa-power-off"></i> Enabled</label>
+    <input type="checkbox" id="node-input-enabled" style="display:inline-block; width:auto; vertical-align:top;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-direction"><i class="fa fa-exchange"></i> Direction</label>
+    <select id="node-input-direction" style="width:70%;">
+      <option value="both">Send and receive</option>
+      <option value="send">Send only</option>
+      <option value="receive">Receive only</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-property"><i class="fa fa-dot-circle-o"></i> Property</label>
+    <input type="text" id="node-input-property" placeholder="payload">
+  </div>
+  <div class="form-row">
+    <label for="node-input-sampleRate"><i class="fa fa-percent"></i> Sample</label>
+    <input type="number" id="node-input-sampleRate" min="0" max="100" step="1" style="width:90px;">
+    <span>% of messages</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-minBytes"><i class="fa fa-filter"></i> Min size</label>
+    <input type="number" id="node-input-minBytes" min="0" step="1" style="width:120px;">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-excludePackageNodes"><i class="fa fa-eye-slash"></i> Exclude</label>
+    <input type="checkbox" id="node-input-excludePackageNodes" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Heap Guardian nodes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-includeNodeTypes"><i class="fa fa-check"></i> Include</label>
+    <input type="text" id="node-input-includeNodeTypes" placeholder="optional node type regex">
+  </div>
+  <div class="form-row">
+    <label for="node-input-excludeNodeTypes"><i class="fa fa-times"></i> Exclude</label>
+    <input type="text" id="node-input-excludeNodeTypes" placeholder="optional node type regex">
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxDepth"><i class="fa fa-sitemap"></i> Max depth</label>
+    <input type="number" id="node-input-maxDepth" min="1" step="1" style="width:80px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxEntries"><i class="fa fa-list"></i> Max entries</label>
+    <input type="number" id="node-input-maxEntries" min="1" step="1" style="width:100px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxRecords"><i class="fa fa-table"></i> Records</label>
+    <input type="number" id="node-input-maxRecords" min="1" step="1" style="width:100px;">
+  </div>
+</script>
+
+<script type="text/html" data-help-name="runtime-profiler">
+  <p>Registers Node-RED runtime hooks to automatically sample message property sizes across flows.</p>
+  <p>Samples are aggregated in the Heap Guardian profiler report by flow name, source/target node, direction, and property.</p>
+  <p>Use a low sample rate in busy systems to avoid profiling overhead.</p>
+</script>

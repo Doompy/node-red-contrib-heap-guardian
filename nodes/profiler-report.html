@@ -1,0 +1,48 @@
+<script type="text/javascript">
+  RED.nodes.registerType("profiler-report", {
+    category: "system",
+    color: "#FADBD8",
+    defaults: {
+      name: { value: "" },
+      limit: { value: 20, validate: RED.validators.number() },
+      sortBy: { value: "lastBytes" },
+      clearAfterRead: { value: false }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-table",
+    label: function () {
+      return this.name || "profiler report";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="profiler-report">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-limit"><i class="fa fa-list"></i> Limit</label>
+    <input type="number" id="node-input-limit" min="1" step="1" style="width:100px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-sortBy"><i class="fa fa-sort"></i> Sort by</label>
+    <select id="node-input-sortBy" style="width:70%;">
+      <option value="lastBytes">Last size</option>
+      <option value="maxBytes">Max size</option>
+      <option value="totalBytes">Total observed bytes</option>
+      <option value="count">Sample count</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-clearAfterRead"><i class="fa fa-trash"></i> Clear</label>
+    <input type="checkbox" id="node-input-clearAfterRead" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Clear profiler records after reading</span>
+  </div>
+</script>
+
+<script type="text/html" data-help-name="profiler-report">
+  <p>Outputs the aggregated Heap Guardian profiler records from global context.</p>
+  <p>Use this after <code>payload-profiler</code> or <code>context-profiler</code> nodes have sampled traffic.</p>
+</script>

@@ -1,0 +1,739 @@
+[
+  {
+    "id": "34a83b3fbe73f8f8",
+    "type": "tab",
+    "label": "Heap Leak Lab",
+    "disabled": false,
+    "info": "Synthetic heap retention lab for node-red-contrib-heap-guardian."
+  },
+  {
+    "id": "f1f2db5a9bfab68f",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/status",
+    "url": "/heap-guardian/status",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 80,
+    "wires": [
+      [
+        "20ea49d7b8584cc8"
+      ]
+    ]
+  },
+  {
+    "id": "20ea49d7b8584cc8",
+    "type": "heap-monitor",
+    "z": "34a83b3fbe73f8f8",
+    "name": "memory status",
+    "includeSpaces": true,
+    "x": 420,
+    "y": 80,
+    "wires": [
+      [
+        "5ef9d2e645205f5d"
+      ]
+    ]
+  },
+  {
+    "id": "5ef9d2e645205f5d",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "attach retained count",
+    "func": "const leak = global.get(\"heapGuardianLeak\") || [];\nmsg.payload = {\n  retainedItems: leak.length,\n  memory: msg.payload\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 80,
+    "wires": [
+      [
+        "ec0ab6fa3536dd56"
+      ]
+    ]
+  },
+  {
+    "id": "ec0ab6fa3536dd56",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 870,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "0d27850914b92229",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/leak",
+    "url": "/heap-guardian/leak",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 160,
+    "wires": [
+      [
+        "b7a8f539c8b8760d"
+      ]
+    ]
+  },
+  {
+    "id": "b7a8f539c8b8760d",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "retain heap objects",
+    "func": "const query = (msg.req && msg.req.query) || {};\nconst requestedCount = Math.min(Math.max(Number.parseInt(query.count || \"128\", 10), 1), 5000);\nconst bytes = Math.min(Math.max(Number.parseInt(query.bytes || \"16384\", 10), 128), 1024 * 1024);\nconst maxAddedBytes = 64 * 1024 * 1024;\nconst count = Math.max(1, Math.min(requestedCount, Math.floor(maxAddedBytes / bytes)));\nconst slots = Math.max(1, Math.ceil(bytes / 8));\nconst leak = global.get(\"heapGuardianLeak\") || [];\nconst startedLength = leak.length;\n\nfor (let i = 0; i < count; i += 1) {\n  const marker = `${Date.now()}-${Math.random()}-${startedLength + i}`;\n  const values = new Array(slots);\n  for (let j = 0; j < slots; j += 1) {\n    values[j] = Math.random() + j + startedLength + i;\n  }\n  leak.push({\n    marker,\n    createdAt: new Date().toISOString(),\n    values\n  });\n}\n\nglobal.set(\"heapGuardianLeak\", leak);\nmsg.leakLab = {\n  action: \"leak\",\n  requestedItems: requestedCount,\n  addedItems: count,\n  retainedItems: leak.length,\n  requestedBytesPerItem: bytes,\n  approximateAddedBytes: count * bytes\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 410,
+    "y": 160,
+    "wires": [
+      [
+        "6ce2af3dcc20cbe9"
+      ]
+    ]
+  },
+  {
+    "id": "6ce2af3dcc20cbe9",
+    "type": "heap-monitor",
+    "z": "34a83b3fbe73f8f8",
+    "name": "after leak",
+    "includeSpaces": false,
+    "x": 630,
+    "y": 160,
+    "wires": [
+      [
+        "ce6456b951a48c3c"
+      ]
+    ]
+  },
+  {
+    "id": "ce6456b951a48c3c",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "format leak response",
+    "func": "msg.payload = {\n  leak: msg.leakLab,\n  memory: msg.payload\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 850,
+    "y": 160,
+    "wires": [
+      [
+        "ce19192714e111d1"
+      ]
+    ]
+  },
+  {
+    "id": "ce19192714e111d1",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 1070,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "985d2c351993e921",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/gc",
+    "url": "/heap-guardian/gc",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 240,
+    "wires": [
+      [
+        "ca1b28d340495ec5"
+      ]
+    ]
+  },
+  {
+    "id": "ca1b28d340495ec5",
+    "type": "gc-trigger",
+    "z": "34a83b3fbe73f8f8",
+    "name": "force gc",
+    "threshold": 80,
+    "minInterval": 0,
+    "force": true,
+    "includeSpaces": false,
+    "x": 380,
+    "y": 240,
+    "wires": [
+      [
+        "9cf63a949b38b4e8"
+      ]
+    ]
+  },
+  {
+    "id": "9cf63a949b38b4e8",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 590,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "49fcd77c15512ca3",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/clear",
+    "url": "/heap-guardian/clear",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 320,
+    "wires": [
+      [
+        "81f57d02018576d1"
+      ]
+    ]
+  },
+  {
+    "id": "81f57d02018576d1",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "release retained objects",
+    "func": "const leak = global.get(\"heapGuardianLeak\") || [];\nglobal.set(\"heapGuardianLeak\", []);\nmsg.leakLab = {\n  action: \"clear\",\n  clearedItems: leak.length\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 320,
+    "wires": [
+      [
+        "05f2db59397bdbd7"
+      ]
+    ]
+  },
+  {
+    "id": "05f2db59397bdbd7",
+    "type": "gc-trigger",
+    "z": "34a83b3fbe73f8f8",
+    "name": "gc after clear",
+    "threshold": 80,
+    "minInterval": 0,
+    "force": true,
+    "includeSpaces": false,
+    "x": 660,
+    "y": 320,
+    "wires": [
+      [
+        "064163c7aa85a065"
+      ]
+    ]
+  },
+  {
+    "id": "064163c7aa85a065",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "format clear response",
+    "func": "msg.payload = {\n  clear: msg.leakLab,\n  gc: msg.payload\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 900,
+    "y": 320,
+    "wires": [
+      [
+        "1ca9c86428ea1965"
+      ]
+    ]
+  },
+  {
+    "id": "1ca9c86428ea1965",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 1130,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "d0db79114d33d2b8",
+    "type": "inject",
+    "z": "34a83b3fbe73f8f8",
+    "name": "manual leak 2MB",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"count\":128,\"bytes\":16384}",
+    "payloadType": "json",
+    "x": 150,
+    "y": 420,
+    "wires": [
+      [
+        "47f805da76ed712d"
+      ]
+    ]
+  },
+  {
+    "id": "47f805da76ed712d",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "manual retain heap objects",
+    "func": "const requestedCount = Math.min(Math.max(Number(msg.payload.count || 128), 1), 5000);\nconst bytes = Math.min(Math.max(Number(msg.payload.bytes || 16384), 128), 1024 * 1024);\nconst maxAddedBytes = 64 * 1024 * 1024;\nconst count = Math.max(1, Math.min(requestedCount, Math.floor(maxAddedBytes / bytes)));\nconst slots = Math.max(1, Math.ceil(bytes / 8));\nconst leak = global.get(\"heapGuardianLeak\") || [];\nconst startedLength = leak.length;\n\nfor (let i = 0; i < count; i += 1) {\n  const marker = `${Date.now()}-${Math.random()}-${startedLength + i}`;\n  const values = new Array(slots);\n  for (let j = 0; j < slots; j += 1) {\n    values[j] = Math.random() + j + startedLength + i;\n  }\n  leak.push({\n    marker,\n    createdAt: new Date().toISOString(),\n    values\n  });\n}\n\nglobal.set(\"heapGuardianLeak\", leak);\nmsg.payload = {\n  requestedItems: requestedCount,\n  addedItems: count,\n  retainedItems: leak.length,\n  requestedBytesPerItem: bytes,\n  approximateAddedBytes: count * bytes\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 420,
+    "wires": [
+      [
+        "93cb0c1855f5e15d"
+      ]
+    ]
+  },
+  {
+    "id": "93cb0c1855f5e15d",
+    "type": "debug",
+    "z": "34a83b3fbe73f8f8",
+    "name": "manual leak result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 420,
+    "wires": []
+  },
+  {
+    "id": "5be08d4b2975f974",
+    "type": "inject",
+    "z": "34a83b3fbe73f8f8",
+    "name": "manual clear",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 480,
+    "wires": [
+      [
+        "dc3a35f9a90b6160"
+      ]
+    ]
+  },
+  {
+    "id": "dc3a35f9a90b6160",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "manual release retained objects",
+    "func": "const leak = global.get(\"heapGuardianLeak\") || [];\nglobal.set(\"heapGuardianLeak\", []);\nmsg.payload = {\n  clearedItems: leak.length\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 480,
+    "wires": [
+      [
+        "2b6e52e6d1956afd"
+      ]
+    ]
+  },
+  {
+    "id": "2b6e52e6d1956afd",
+    "type": "debug",
+    "z": "34a83b3fbe73f8f8",
+    "name": "manual clear result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 480,
+    "wires": []
+  },
+  {
+    "id": "cae4ce2ff8cc0a1a",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/profile/context",
+    "url": "/heap-guardian/profile/context",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 190,
+    "y": 560,
+    "wires": [
+      [
+        "751707bd110c9f4b"
+      ]
+    ]
+  },
+  {
+    "id": "751707bd110c9f4b",
+    "type": "context-profiler",
+    "z": "34a83b3fbe73f8f8",
+    "name": "profile context",
+    "scope": "both",
+    "outputMode": "replace",
+    "maxKeys": 25,
+    "maxDepth": 8,
+    "maxEntries": 10000,
+    "excludePattern": "^heapGuardianProfiler$",
+    "x": 480,
+    "y": 560,
+    "wires": [
+      [
+        "1215a5d3e83f6f0b"
+      ]
+    ]
+  },
+  {
+    "id": "1215a5d3e83f6f0b",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 720,
+    "y": 560,
+    "wires": []
+  },
+  {
+    "id": "3e1dc85e3c211a36",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/profile/report",
+    "url": "/heap-guardian/profile/report",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 190,
+    "y": 640,
+    "wires": [
+      [
+        "7cbb499e0a7b8611"
+      ]
+    ]
+  },
+  {
+    "id": "7cbb499e0a7b8611",
+    "type": "profiler-report",
+    "z": "34a83b3fbe73f8f8",
+    "name": "profiler report",
+    "limit": 20,
+    "sortBy": "lastBytes",
+    "clearAfterRead": false,
+    "x": 480,
+    "y": 640,
+    "wires": [
+      [
+        "873df552ce1637d7"
+      ]
+    ]
+  },
+  {
+    "id": "873df552ce1637d7",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 720,
+    "y": 640,
+    "wires": []
+  },
+  {
+    "id": "02a8fd225d5e91f7",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/payload",
+    "url": "/heap-guardian/payload",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 720,
+    "wires": [
+      [
+        "613a23d87f3cab90"
+      ]
+    ]
+  },
+  {
+    "id": "613a23d87f3cab90",
+    "type": "function",
+    "z": "34a83b3fbe73f8f8",
+    "name": "build large payload",
+    "func": "const query = (msg.req && msg.req.query) || {};\nconst requestedCount = Math.min(Math.max(Number.parseInt(query.count || \"256\", 10), 1), 5000);\nconst bytes = Math.min(Math.max(Number.parseInt(query.bytes || \"16384\", 10), 128), 1024 * 1024);\nconst maxPayloadBytes = 64 * 1024 * 1024;\nconst count = Math.max(1, Math.min(requestedCount, Math.floor(maxPayloadBytes / bytes)));\nconst slots = Math.max(1, Math.ceil(bytes / 8));\nconst items = [];\n\nfor (let i = 0; i < count; i += 1) {\n  const values = new Array(slots);\n  for (let j = 0; j < slots; j += 1) {\n    values[j] = Math.random() + i + j;\n  }\n  items.push({ index: i, values });\n}\n\nmsg.payload = {\n  action: \"payload\",\n  requestedItems: requestedCount,\n  addedItems: count,\n  requestedBytesPerItem: bytes,\n  approximateBytes: count * bytes,\n  items\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 410,
+    "y": 720,
+    "wires": [
+      [
+        "c5a5d35d65a95b51"
+      ]
+    ]
+  },
+  {
+    "id": "c5a5d35d65a95b51",
+    "type": "payload-profiler",
+    "z": "34a83b3fbe73f8f8",
+    "name": "profile payload",
+    "property": "payload",
+    "outputMode": "replace",
+    "warnBytes": 1048576,
+    "criticalBytes": 8388608,
+    "maxDepth": 8,
+    "maxEntries": 10000,
+    "x": 650,
+    "y": 720,
+    "wires": [
+      [
+        "2905ea6cf209511d"
+      ]
+    ]
+  },
+  {
+    "id": "2905ea6cf209511d",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 880,
+    "y": 720,
+    "wires": []
+  },
+  {
+    "id": "95c9f03d61adfb3c",
+    "type": "runtime-profiler",
+    "z": "34a83b3fbe73f8f8",
+    "name": "auto sample payloads",
+    "enabled": true,
+    "direction": "send",
+    "property": "payload",
+    "sampleRate": 100,
+    "minBytes": 1024,
+    "maxDepth": 6,
+    "maxEntries": 5000,
+    "maxRecords": 1000,
+    "excludePackageNodes": true,
+    "includeNodeTypes": "",
+    "excludeNodeTypes": "",
+    "x": 190,
+    "y": 800,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "7f33746c66f4bc28",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/snapshot",
+    "url": "/heap-guardian/snapshot",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 880,
+    "wires": [
+      [
+        "472cd0e318fbe5b0"
+      ]
+    ]
+  },
+  {
+    "id": "472cd0e318fbe5b0",
+    "type": "heap-snapshot",
+    "z": "34a83b3fbe73f8f8",
+    "name": "write heap snapshot",
+    "directory": "/data/heap-snapshots",
+    "label": "leak-lab",
+    "threshold": 80,
+    "minInterval": 300,
+    "force": true,
+    "x": 460,
+    "y": 880,
+    "wires": [
+      [
+        "6c0b23d708d67d5f"
+      ]
+    ]
+  },
+  {
+    "id": "6c0b23d708d67d5f",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 720,
+    "y": 880,
+    "wires": []
+  },
+  {
+    "id": "a3020171219b9834",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/metrics",
+    "url": "/heap-guardian/metrics",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 960,
+    "wires": [
+      [
+        "862f8a88583a0277"
+      ]
+    ]
+  },
+  {
+    "id": "862f8a88583a0277",
+    "type": "metrics-report",
+    "z": "34a83b3fbe73f8f8",
+    "name": "json metrics",
+    "format": "json",
+    "limit": 20,
+    "sortBy": "lastBytes",
+    "includeSpaces": false,
+    "x": 420,
+    "y": 960,
+    "wires": [
+      [
+        "136114787315b922"
+      ]
+    ]
+  },
+  {
+    "id": "136114787315b922",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 650,
+    "y": 960,
+    "wires": []
+  },
+  {
+    "id": "fe22c42cf13b47ac",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/metrics/prometheus",
+    "url": "/heap-guardian/metrics/prometheus",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 210,
+    "y": 1040,
+    "wires": [
+      [
+        "d9f4c11aec426445"
+      ]
+    ]
+  },
+  {
+    "id": "d9f4c11aec426445",
+    "type": "metrics-report",
+    "z": "34a83b3fbe73f8f8",
+    "name": "prometheus metrics",
+    "format": "prometheus",
+    "limit": 20,
+    "sortBy": "lastBytes",
+    "includeSpaces": false,
+    "x": 500,
+    "y": 1040,
+    "wires": [
+      [
+        "e6d82a59b3c6dce4"
+      ]
+    ]
+  },
+  {
+    "id": "e6d82a59b3c6dce4",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 770,
+    "y": 1040,
+    "wires": []
+  }
+]

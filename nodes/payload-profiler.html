@@ -1,0 +1,62 @@
+<script type="text/javascript">
+  RED.nodes.registerType("payload-profiler", {
+    category: "system",
+    color: "#D4E6F1",
+    defaults: {
+      name: { value: "" },
+      property: { value: "payload", required: true },
+      outputMode: { value: "annotate" },
+      warnBytes: { value: 1048576, validate: RED.validators.number() },
+      criticalBytes: { value: 8388608, validate: RED.validators.number() },
+      maxDepth: { value: 8, validate: RED.validators.number() },
+      maxEntries: { value: 10000, validate: RED.validators.number() }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-search",
+    label: function () {
+      return this.name || "payload profiler";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="payload-profiler">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-property"><i class="fa fa-dot-circle-o"></i> Property</label>
+    <input type="text" id="node-input-property" placeholder="payload">
+  </div>
+  <div class="form-row">
+    <label for="node-input-outputMode"><i class="fa fa-sign-out"></i> Output</label>
+    <select id="node-input-outputMode" style="width:70%;">
+      <option value="annotate">Pass through and add msg.heapGuardian.payloadProfile</option>
+      <option value="replace">Replace msg.payload with profile</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-warnBytes"><i class="fa fa-warning"></i> Warn</label>
+    <input type="number" id="node-input-warnBytes" min="0" step="1" style="width:120px;">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalBytes"><i class="fa fa-fire"></i> Critical</label>
+    <input type="number" id="node-input-criticalBytes" min="0" step="1" style="width:120px;">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxDepth"><i class="fa fa-sitemap"></i> Max depth</label>
+    <input type="number" id="node-input-maxDepth" min="1" step="1" style="width:80px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxEntries"><i class="fa fa-list"></i> Max entries</label>
+    <input type="number" id="node-input-maxEntries" min="1" step="1" style="width:100px;">
+  </div>
+</script>
+
+<script type="text/html" data-help-name="payload-profiler">
+  <p>Estimates the size of a message property and records the result by flow and profiler node.</p>
+  <p>By default, the message passes through unchanged and the profile is attached to <code>msg.heapGuardian.payloadProfile</code>.</p>
+</script>

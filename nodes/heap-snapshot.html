@@ -1,0 +1,55 @@
+<script type="text/javascript">
+  RED.nodes.registerType("heap-snapshot", {
+    category: "system",
+    color: "#F9E79F",
+    defaults: {
+      name: { value: "" },
+      directory: { value: "/data/heap-snapshots", required: true },
+      label: { value: "manual" },
+      threshold: { value: 80, validate: RED.validators.number() },
+      minInterval: { value: 300, validate: RED.validators.number() },
+      force: { value: false }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-camera",
+    label: function () {
+      return this.name || "heap snapshot";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="heap-snapshot">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
+    <input type="text" id="node-input-directory" placeholder="/data/heap-snapshots">
+  </div>
+  <div class="form-row">
+    <label for="node-input-label"><i class="fa fa-file"></i> Label</label>
+    <input type="text" id="node-input-label" placeholder="manual">
+  </div>
+  <div class="form-row">
+    <label for="node-input-threshold"><i class="fa fa-tachometer"></i> Threshold</label>
+    <input type="number" id="node-input-threshold" min="0" max="100" step="1" style="width:90px;">
+    <span>% heap used</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-minInterval"><i class="fa fa-clock-o"></i> Interval</label>
+    <input type="number" id="node-input-minInterval" min="0" step="1" style="width:90px;">
+    <span>seconds minimum between snapshots</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-force"><i class="fa fa-bolt"></i> Force</label>
+    <input type="checkbox" id="node-input-force" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Ignore threshold and interval guards</span>
+  </div>
+</script>
+
+<script type="text/html" data-help-name="heap-snapshot">
+  <p>Writes a V8 heap snapshot to disk when guard conditions pass.</p>
+  <p>Heap snapshot creation can pause Node-RED and may require significant temporary memory. Use conservative thresholds in production.</p>
+</script>
