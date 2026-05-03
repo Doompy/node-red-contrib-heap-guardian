@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2
+
+- Add `analysis.topContextGrowers` for context-specific growth ranking.
+- Add `summary` and `severity` to suspect analysis entries.
+- Suppress unreliable `topExpanders` ratios when receive payloads are below the ratio threshold.
+- Filter small runtime expanders by default to reduce report noise.
+- Add profiler-report editor filters for kind, flow, node, property, size, and delta.
+- Add `npm run smoke:docker` for Docker leak lab smoke testing.
+
 ## 0.1.1
 
 - Add profiler growth tracking fields.

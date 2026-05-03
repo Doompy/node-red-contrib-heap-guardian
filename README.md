@@ -81,9 +81,13 @@ Outputs aggregate records collected by `payload-profiler`, `context-profiler`, a
 The report also includes:
 
 - `analysis.topGrowers`: records whose latest sample grew the most
+- `analysis.topContextGrowers`: flow/global context records growing fastest
 - `analysis.topPayloadKeys`: payload child properties carrying or growing the most data
 - `analysis.topExpanders`: runtime nodes whose send payload is larger than their receive payload
 - `analysis.suspects`: scored records and runtime expansions most likely to explain retained or amplified data
+
+`analysis.topExpanders` suppresses expansion ratios when the receive baseline is too small, so tiny inbound payloads do not produce misleading ratios. In that case the report still shows `deltaBytes` and a `ratioStatus`.
+Suspect entries include `summary` and `severity` fields for quick triage.
 
 Sort options include:
 
@@ -99,6 +103,8 @@ HTTP flows can filter report output with query parameters:
 /heap-guardian/profile/report?property=payload.items
 /heap-guardian/metrics?nodeType=function&limit=5
 ```
+
+The `profiler-report` node can also apply the same filters from its editor settings or from `msg.profilerFilter`.
 
 ### runtime-profiler
 
@@ -142,6 +148,15 @@ Run checks:
 cd C:\dev\node-red-heap-guardian
 npm run verify
 ```
+
+Run the Docker smoke test:
+
+```powershell
+cd C:\dev\node-red-heap-guardian
+npm run smoke:docker
+```
+
+The smoke test builds the image, installs the current package tarball into the running Node-RED `/data` directory, deploys the leak lab, and verifies profiler analysis endpoints.
 
 ## Heap Leak Lab
 

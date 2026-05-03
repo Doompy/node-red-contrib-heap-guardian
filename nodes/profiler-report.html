@@ -6,6 +6,13 @@
       name: { value: "" },
       limit: { value: 20, validate: RED.validators.number() },
       sortBy: { value: "lastBytes" },
+      kind: { value: "" },
+      flowId: { value: "" },
+      nodeId: { value: "" },
+      nodeType: { value: "" },
+      property: { value: "" },
+      minBytes: { value: "", validate: RED.validators.number(true) },
+      minDeltaBytes: { value: "", validate: RED.validators.number(true) },
       clearAfterRead: { value: false }
     },
     inputs: 1,
@@ -36,6 +43,36 @@
     </select>
   </div>
   <div class="form-row">
+    <label for="node-input-kind"><i class="fa fa-filter"></i> Kind</label>
+    <input type="text" id="node-input-kind" placeholder="payload,runtime-payload,context">
+  </div>
+  <div class="form-row">
+    <label for="node-input-nodeType"><i class="fa fa-cube"></i> Node type</label>
+    <input type="text" id="node-input-nodeType" placeholder="function">
+  </div>
+  <div class="form-row">
+    <label for="node-input-property"><i class="fa fa-dot-circle-o"></i> Property</label>
+    <input type="text" id="node-input-property" placeholder="payload.items">
+  </div>
+  <div class="form-row">
+    <label for="node-input-flowId"><i class="fa fa-code-fork"></i> Flow id</label>
+    <input type="text" id="node-input-flowId" placeholder="optional flow id">
+  </div>
+  <div class="form-row">
+    <label for="node-input-nodeId"><i class="fa fa-tag"></i> Node id</label>
+    <input type="text" id="node-input-nodeId" placeholder="optional node id">
+  </div>
+  <div class="form-row">
+    <label for="node-input-minBytes"><i class="fa fa-database"></i> Min size</label>
+    <input type="number" id="node-input-minBytes" min="0" step="1" style="width:120px;">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-minDeltaBytes"><i class="fa fa-line-chart"></i> Min delta</label>
+    <input type="number" id="node-input-minDeltaBytes" min="0" step="1" style="width:120px;">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
     <label for="node-input-clearAfterRead"><i class="fa fa-trash"></i> Clear</label>
     <input type="checkbox" id="node-input-clearAfterRead" style="display:inline-block; width:auto; vertical-align:top;">
     <span>Clear profiler records after reading</span>
@@ -46,5 +83,5 @@
   <p>Outputs the aggregated Heap Guardian profiler records from global context.</p>
   <p>Use this after <code>payload-profiler</code>, <code>context-profiler</code>, or <code>runtime-profiler</code> nodes have sampled traffic.</p>
   <p>The output includes analysis lists for top growers, payload keys, runtime expanders, and scored suspects.</p>
-  <p>HTTP query parameters or <code>msg.profilerFilter</code> can filter by <code>kind</code>, <code>flowId</code>, <code>nodeId</code>, <code>nodeType</code>, <code>property</code>, <code>minBytes</code>, or <code>minDeltaBytes</code>.</p>
+  <p>Node settings, HTTP query parameters, or <code>msg.profilerFilter</code> can filter by <code>kind</code>, <code>flowId</code>, <code>nodeId</code>, <code>nodeType</code>, <code>property</code>, <code>minBytes</code>, or <code>minDeltaBytes</code>.</p>
 </script>

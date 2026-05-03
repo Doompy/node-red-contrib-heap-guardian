@@ -18,6 +18,7 @@ function readReportOptions(msg, defaults) {
   const query = readQuery(msg);
   const messageFilter = (msg.heapGuardian && msg.heapGuardian.profilerFilter) || msg.profilerFilter || {};
   const filter = {
+    ...(defaults.filter || {}),
     ...messageFilter
   };
 
@@ -49,6 +50,15 @@ module.exports = function registerProfilerReport(RED) {
     const node = this;
     const limit = parseNumber(config.limit, 20);
     const sortBy = config.sortBy || "lastBytes";
+    const filter = {
+      kind: config.kind || "",
+      flowId: config.flowId || "",
+      nodeId: config.nodeId || "",
+      nodeType: config.nodeType || "",
+      property: config.property || "",
+      minBytes: config.minBytes ?? "",
+      minDeltaBytes: config.minDeltaBytes ?? ""
+    };
     const clearAfterRead = config.clearAfterRead === true || config.clearAfterRead === "true";
 
     node.on("input", (msg, send, done) => {
@@ -61,7 +71,7 @@ module.exports = function registerProfilerReport(RED) {
 
       try {
         const globalContext = node.context().global;
-        const report = getProfilerReport(globalContext, readReportOptions(msg, { limit, sortBy }));
+        const report = getProfilerReport(globalContext, readReportOptions(msg, { limit, sortBy, filter }));
 
         report.records = report.records.map((record) => ({
           ...record,

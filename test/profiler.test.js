@@ -183,7 +183,47 @@ test("getProfilerReport analysis returns top payload keys and suspects", () => {
   assert.equal(report.analysis.topPayloadKeys[0].property, "payload.items");
   assert.equal(report.analysis.topPayloadKeys[0].deltaBytes, 900);
   assert.equal(report.analysis.suspects[0].property, "payload.items");
+  assert.match(report.analysis.suspects[0].summary, /payload\.items grew by/);
+  assert.ok(["info", "warning", "critical"].includes(report.analysis.suspects[0].severity));
   assert.ok(report.analysis.suspects[0].reasons.includes("payload-key"));
+});
+
+test("getProfilerReport analysis returns context growers", () => {
+  const context = createContext();
+  const meta = {
+    flowId: "flow-1",
+    flowName: "Flow 1",
+    nodeId: "node-1",
+    nodeName: "profile context",
+    nodeType: "context-profiler"
+  };
+
+  recordProfile(context, meta, {
+    kind: "context",
+    scope: "global",
+    property: "cache",
+    contextKey: "cache",
+    bytes: 1024,
+    type: "array"
+  }, {
+    now: new Date("2026-05-03T00:00:00.000Z")
+  });
+  recordProfile(context, meta, {
+    kind: "context",
+    scope: "global",
+    property: "cache",
+    contextKey: "cache",
+    bytes: 4096,
+    type: "array"
+  }, {
+    now: new Date("2026-05-03T00:01:00.000Z")
+  });
+
+  const [grower] = getProfilerReport(context, { limit: 10 }).analysis.topContextGrowers;
+
+  assert.equal(grower.kind, "context");
+  assert.equal(grower.contextKey, "cache");
+  assert.equal(grower.deltaBytes, 3072);
 });
 
 test("getProfilerReport analysis compares runtime send and receive payload sizes", () => {
@@ -201,7 +241,7 @@ test("getProfilerReport analysis compares runtime send and receive payload sizes
     scope: "receive",
     direction: "receive",
     property: "payload",
-    bytes: 100,
+    bytes: 2048,
     type: "object"
   });
   recordProfile(context, meta, {
@@ -210,7 +250,7 @@ test("getProfilerReport analysis compares runtime send and receive payload sizes
     direction: "send",
     property: "payload[out:0]",
     port: 0,
-    bytes: 500,
+    bytes: 8192,
     type: "object"
   });
 
@@ -220,11 +260,48 @@ test("getProfilerReport analysis compares runtime send and receive payload sizes
   assert.equal(expander.nodeName, "expanding function");
   assert.equal(expander.property, "payload");
   assert.equal(expander.sendProperty, "payload[out:0]");
-  assert.equal(expander.receiveBytes, 100);
-  assert.equal(expander.sendBytes, 500);
-  assert.equal(expander.deltaBytes, 400);
-  assert.equal(expander.expansionRatio, 5);
+  assert.equal(expander.receiveBytes, 2048);
+  assert.equal(expander.sendBytes, 8192);
+  assert.equal(expander.deltaBytes, 6144);
+  assert.equal(expander.expansionRatio, 4);
+  assert.equal(expander.ratioStatus, "calculated");
   assert.equal(report.analysis.suspects[0].category, "runtime-expansion");
+  assert.match(report.analysis.suspects[0].summary, /sends payload/);
+});
+
+test("getProfilerReport suppresses unreliable expander ratios", () => {
+  const context = createContext();
+  const meta = {
+    flowId: "flow-1",
+    flowName: "Flow 1",
+    nodeId: "node-1",
+    nodeName: "expanding function",
+    nodeType: "function"
+  };
+
+  recordProfile(context, meta, {
+    kind: "runtime-payload",
+    scope: "receive",
+    direction: "receive",
+    property: "payload",
+    bytes: 42,
+    type: "object"
+  });
+  recordProfile(context, meta, {
+    kind: "runtime-payload",
+    scope: "send",
+    direction: "send",
+    property: "payload[out:0]",
+    port: 0,
+    bytes: 4096,
+    type: "object"
+  });
+
+  const [expander] = getProfilerReport(context, { limit: 10 }).analysis.topExpanders;
+
+  assert.equal(expander.receiveBytes, 42);
+  assert.equal(expander.expansionRatio, null);
+  assert.equal(expander.ratioStatus, "receive-below-threshold");
 });
 
 test("getProfilerReport analysis keeps ratio null when receive is missing", () => {
@@ -242,15 +319,38 @@ test("getProfilerReport analysis keeps ratio null when receive is missing", () =
     direction: "send",
     property: "payload[out:0]",
     port: 0,
-    bytes: 500,
+    bytes: 5000,
     type: "object"
   });
 
   const [expander] = getProfilerReport(context, { limit: 10 }).analysis.topExpanders;
 
   assert.equal(expander.receiveBytes, null);
-  assert.equal(expander.deltaBytes, 500);
+  assert.equal(expander.deltaBytes, 5000);
   assert.equal(expander.expansionRatio, null);
+  assert.equal(expander.ratioStatus, "missing-receive");
+});
+
+test("getProfilerReport filters small runtime expanders", () => {
+  const context = createContext();
+
+  recordProfile(context, {
+    flowId: "flow-1",
+    flowName: "Flow 1",
+    nodeId: "node-1",
+    nodeName: "inject",
+    nodeType: "inject"
+  }, {
+    kind: "runtime-payload",
+    scope: "send",
+    direction: "send",
+    property: "payload[out:0]",
+    port: 0,
+    bytes: 512,
+    type: "object"
+  });
+
+  assert.equal(getProfilerReport(context, { limit: 10 }).analysis.topExpanders.length, 0);
 });
 
 test("getProfilerReport supports record filters", () => {
