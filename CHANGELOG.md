@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0
+
+- Add profiler history ring buffers, trend analysis, and leak alerts.
+- Add dashboard-ready JSON summaries to profiler and metrics reports.
+- Add `heap-dashboard` HTML renderer node.
+- Add Prometheus alert, suspect, and trend summary metrics.
+- Add snapshot metadata indexing and latest/previous/baseline comparison.
+- Add experimental constructor/type heap snapshot diff support.
+- Add opt-in JSONL persistent profiler history.
+- Add opt-in `auto-gc-guard` node for guarded GC on qualifying alerts.
+- Expand the leak lab and Docker smoke test for the leak investigation workflow.
+- Add upgrade notes and optional editor validation for new numeric settings.
+
 ## 0.1.2
 
 - Add `analysis.topContextGrowers` for context-specific growth ranking.

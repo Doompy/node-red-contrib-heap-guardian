@@ -1,0 +1,34 @@
+<script type="text/javascript">
+  RED.nodes.registerType("heap-dashboard", {
+    category: "system",
+    color: "#E8DAEF",
+    defaults: {
+      name: { value: "" },
+      title: { value: "Heap Guardian" }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-dashboard",
+    label: function () {
+      return this.name || "heap dashboard";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="heap-dashboard">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-title"><i class="fa fa-header"></i> Title</label>
+    <input type="text" id="node-input-title" placeholder="Heap Guardian">
+  </div>
+</script>
+
+<script type="text/html" data-help-name="heap-dashboard">
+  <p>Renders Heap Guardian metrics or profiler JSON as standalone HTML.</p>
+  <p>Connect it after <code>metrics-report</code> or <code>profiler-report</code>, then into an HTTP Response, Dashboard template, or ui-template node.</p>
+  <p>Typical HTTP flow: <code>HTTP In -> metrics-report -> heap-dashboard -> HTTP Response</code>.</p>
+  <p>This node has no Node-RED Dashboard package dependency.</p>
+</script>

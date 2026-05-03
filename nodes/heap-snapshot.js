@@ -2,7 +2,7 @@
 
 const { getMemoryState } = require("../lib/memory");
 const { formatBytes } = require("../lib/size");
-const { writeHeapSnapshot } = require("../lib/snapshot");
+const { recordSnapshot, writeHeapSnapshot } = require("../lib/snapshot");
 
 function parseNumber(value, fallback) {
   const numberValue = Number(value);
@@ -76,6 +76,9 @@ module.exports = function registerHeapSnapshot(RED) {
           directory,
           label
         });
+        const metadata = recordSnapshot(node.context().global, snapshot, memory, {
+          reason: label
+        });
 
         lastSnapshotAt = Date.now();
         msg.payload = {
@@ -83,6 +86,7 @@ module.exports = function registerHeapSnapshot(RED) {
           threshold,
           pressure,
           snapshot,
+          snapshotMetadata: metadata,
           memory
         };
 

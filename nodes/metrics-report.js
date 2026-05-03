@@ -38,6 +38,15 @@ function readReportOptions(msg, defaults) {
     includeSpaces: defaults.includeSpaces,
     limit: parseNumber(query.limit, defaults.limit),
     sortBy: query.sortBy || defaults.sortBy,
+    includeProfilerRecordMetrics: query.includeProfilerRecordMetrics === undefined
+      ? defaults.includeProfilerRecordMetrics
+      : query.includeProfilerRecordMetrics !== "false",
+    maxPrometheusRecords: parseNumber(query.maxPrometheusRecords, defaults.maxPrometheusRecords),
+    snapshotDiffEnabled: query.snapshotDiffEnabled === undefined
+      ? defaults.snapshotDiffEnabled
+      : query.snapshotDiffEnabled === "true",
+    maxSnapshotDiffBytes: parseNumber(query.maxSnapshotDiffBytes, defaults.maxSnapshotDiffBytes),
+    snapshotDiffTimeoutMs: parseNumber(query.snapshotDiffTimeoutMs, defaults.snapshotDiffTimeoutMs),
     filter
   };
 }
@@ -51,6 +60,11 @@ module.exports = function registerMetricsReport(RED) {
     const limit = parseNumber(config.limit, 20);
     const sortBy = config.sortBy || "lastBytes";
     const includeSpaces = config.includeSpaces === true || config.includeSpaces === "true";
+    const includeProfilerRecordMetrics = config.includeProfilerRecordMetrics !== false && config.includeProfilerRecordMetrics !== "false";
+    const maxPrometheusRecords = parseNumber(config.maxPrometheusRecords, limit);
+    const snapshotDiffEnabled = config.snapshotDiffEnabled === true || config.snapshotDiffEnabled === "true";
+    const maxSnapshotDiffBytes = parseNumber(config.maxSnapshotDiffBytes, 128 * 1024 * 1024);
+    const snapshotDiffTimeoutMs = parseNumber(config.snapshotDiffTimeoutMs, 30000);
 
     node.on("input", (msg, send, done) => {
       const nodeSend = send || ((message) => node.send(message));
@@ -61,13 +75,23 @@ module.exports = function registerMetricsReport(RED) {
       });
 
       try {
+        const reportOptions = readReportOptions(msg, {
+          includeSpaces,
+          limit,
+          sortBy,
+          includeProfilerRecordMetrics,
+          maxPrometheusRecords,
+          snapshotDiffEnabled,
+          maxSnapshotDiffBytes,
+          snapshotDiffTimeoutMs
+        });
         const report = createMetricsReport(
           node.context().global,
-          readReportOptions(msg, { includeSpaces, limit, sortBy })
+          reportOptions
         );
 
         if (format === "prometheus") {
-          msg.payload = createPrometheusMetrics(report);
+          msg.payload = createPrometheusMetrics(report, reportOptions);
           msg.headers = {
             ...(msg.headers || {}),
             "content-type": "text/plain; version=0.0.4; charset=utf-8"

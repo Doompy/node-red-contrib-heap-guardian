@@ -1,8 +1,8 @@
 # node-red-contrib-heap-guardian
 
-Memory pressure monitor and guarded GC trigger nodes for Node-RED.
+Memory pressure monitor, leak profiler, dashboard renderer, and guarded GC nodes for Node-RED.
 
-This package does not replace V8 garbage collection. It observes memory pressure and provides conservative diagnostics/actions for Node-RED flows.
+This package does not replace V8 garbage collection. It observes memory pressure and helps investigate Node-RED memory growth through a `trend -> alert -> suspect -> snapshot -> dashboard/prometheus` workflow.
 
 Repository:
 
@@ -48,6 +48,8 @@ The Docker example writes snapshots to:
 
 Heap snapshot creation can pause Node-RED and may need substantial temporary memory. In production, use a high threshold and a long cooldown.
 
+When a snapshot is written, Heap Guardian stores metadata in Node-RED global context under `heapGuardianSnapshots`. Metrics JSON reports include the latest, previous, baseline, and size/memory deltas.
+
 ### payload-profiler
 
 Estimates the size of `msg.payload` or another message property.
@@ -81,13 +83,27 @@ Outputs aggregate records collected by `payload-profiler`, `context-profiler`, a
 The report also includes:
 
 - `analysis.topGrowers`: records whose latest sample grew the most
+- `analysis.topTrends`: records with the largest recent history growth
 - `analysis.topContextGrowers`: flow/global context records growing fastest
+- `analysis.topContextTrends`: alias-compatible context trend output for dashboards
 - `analysis.topPayloadKeys`: payload child properties carrying or growing the most data
 - `analysis.topExpanders`: runtime nodes whose send payload is larger than their receive payload
 - `analysis.suspects`: scored records and runtime expansions most likely to explain retained or amplified data
+- `analysis.alerts`: warning/critical growth and expansion alerts with evidence
+- `dashboard`: dashboard-ready status, cards, and alert/suspect/context trend tables
 
 `analysis.topExpanders` suppresses expansion ratios when the receive baseline is too small, so tiny inbound payloads do not produce misleading ratios. In that case the report still shows `deltaBytes` and a `ratioStatus`.
-Suspect entries include `summary` and `severity` fields for quick triage.
+Suspect and alert entries include `summary`, `severity`, and evidence fields for quick triage.
+
+Each profiler record keeps a small in-memory history ring buffer. The default limit is 10 samples. History entries contain:
+
+```json
+{
+  "timestamp": "2026-05-04T00:00:00.000Z",
+  "bytes": 1048576,
+  "deltaBytes": 262144
+}
+```
 
 Sort options include:
 
@@ -130,6 +146,107 @@ Place it behind an HTTP In node to expose endpoints such as:
 /heap-guardian/metrics
 /heap-guardian/metrics/prometheus
 ```
+
+JSON output includes:
+
+- `memory`: current process and V8 memory state
+- `profiler`: profiler records and analysis
+- `dashboard`: status, cards, and dashboard tables
+- `snapshots`: latest, previous, baseline, comparison, and optional experimental object diff
+
+Prometheus output includes memory gauges, heap pressure ratios, profiler record metrics, and low-cardinality analysis summary metrics:
+
+```text
+heap_guardian_profiler_alerts{severity="warning"}
+heap_guardian_profiler_alerts{severity="critical"}
+heap_guardian_profiler_suspects
+heap_guardian_profiler_trends
+```
+
+The older high-cardinality profiler record metric remains enabled by default for compatibility. Disable it on busy systems with the `includeProfilerRecordMetrics` node option or query parameter:
+
+```text
+/heap-guardian/metrics/prometheus?includeProfilerRecordMetrics=false
+```
+
+Use `maxPrometheusRecords` to cap how many profiler records are emitted when record metrics are enabled.
+
+### heap-dashboard
+
+Renders a `profiler-report` or `metrics-report` JSON payload into an HTML string.
+
+This node does not depend on Node-RED Dashboard. Connect it to an HTTP Response node, Dashboard template node, or ui-template node.
+
+Typical HTTP flow:
+
+```text
+HTTP In -> metrics-report -> heap-dashboard -> HTTP Response
+```
+
+### auto-gc-guard
+
+Runs guarded GC only when an incoming report shows qualifying leak alerts and current heap pressure is above the configured threshold.
+
+It is disabled by default and never runs on a background timer. It only evaluates when a message enters the node.
+
+Default guard conditions:
+
+- `enabled`: false
+- `requiredSeverity`: critical
+- heap threshold: 85%
+- cooldown: 300 seconds
+- max runs per hour: 3
+
+Manual GC still requires Node-RED to be started with `--expose-gc`. Without it, the node writes a structured skipped result to `msg.heapGuardian.autoGc`.
+
+## Experimental Snapshot Diff
+
+`metrics-report` can compare the latest and previous V8 heap snapshot by constructor/type. This is opt-in because parsing heap snapshots can be expensive.
+
+Enable with:
+
+```text
+/heap-guardian/metrics?snapshotDiffEnabled=true
+```
+
+Defaults:
+
+- `snapshotDiffEnabled`: false
+- `maxSnapshotDiffBytes`: 134217728
+- `snapshotDiffTimeoutMs`: 30000
+
+The diff returns `topAdded`, `topGrowing`, and `topRemoved` by constructor/type using `countDelta` and `selfSizeDelta`. Retainer paths and full dominator retained-size analysis are intentionally out of scope for this release.
+
+## Persistent History
+
+Recent profiler history is kept in memory by default. JSONL persistent history is opt-in through environment variables:
+
+```powershell
+$env:HEAP_GUARDIAN_HISTORY_FILE="C:\dev\heap-guardian-history.jsonl"
+$env:HEAP_GUARDIAN_HISTORY_MAX_BYTES="52428800"
+```
+
+When the file reaches the max size, it is rotated to `.1` and a new file is started. External databases are not used.
+
+## Upgrade Notes
+
+When upgrading from `0.1.x` to `0.2.0`, reinstall the package and restart Node-RED so the editor loads the new node definitions.
+
+For a local Node-RED user directory:
+
+```powershell
+cd C:\Users\<you>\.node-red
+npm install C:\dev\node-red-heap-guardian
+```
+
+For Docker development, remember that a persistent `/data` volume can keep an older installed module. Use a clean volume when testing a local package build:
+
+```powershell
+docker compose down -v
+docker compose up --build
+```
+
+Existing `metrics-report` nodes from `0.1.x` continue to run with default values for the new `0.2.0` fields. If the editor still shows stale validation warnings after reinstalling, refresh the browser and restart Node-RED to clear cached node definitions.
 
 ## Local Development
 
@@ -181,6 +298,7 @@ Invoke-RestMethod http://localhost:1880/heap-guardian/profile/context
 Invoke-RestMethod http://localhost:1880/heap-guardian/profile/report
 Invoke-RestMethod http://localhost:1880/heap-guardian/metrics
 Invoke-RestMethod http://localhost:1880/heap-guardian/metrics/prometheus
+Invoke-WebRequest http://localhost:1880/heap-guardian/dashboard
 Invoke-RestMethod http://localhost:1880/heap-guardian/gc
 Invoke-RestMethod http://localhost:1880/heap-guardian/snapshot
 Invoke-RestMethod http://localhost:1880/heap-guardian/clear
@@ -190,11 +308,13 @@ Invoke-RestMethod http://localhost:1880/heap-guardian/clear
 
 `/heap-guardian/leak` retains generated number arrays in Node-RED global context under `heapGuardianLeak`. This is intentionally wasteful and should only be used in a local test environment.
 
-`/heap-guardian/profile/context` shows which context keys are retaining memory. `/heap-guardian/profile/report` shows aggregate profiler records by flow/profiler node/key.
+`/heap-guardian/profile/context` shows which context keys are retaining memory. Call `/heap-guardian/leak` and `/heap-guardian/profile/context` repeatedly to make `analysis.topContextTrends` and `analysis.alerts` visible.
 
-The leak lab also includes a `runtime-profiler` node that automatically records large payloads sent and received by regular flow nodes. It excludes Heap Guardian's own nodes by default so the report focuses on application flow behavior. Call `/heap-guardian/profile/report` after multiple `/heap-guardian/payload` or `/heap-guardian/leak` requests to inspect `analysis.topGrowers`, `analysis.topPayloadKeys`, `analysis.topExpanders`, and `analysis.suspects`.
+The leak lab also includes a `runtime-profiler` node that automatically records large payloads sent and received by regular flow nodes. It excludes Heap Guardian's own nodes by default so the report focuses on application flow behavior. Call `/heap-guardian/profile/report` after multiple `/heap-guardian/payload` or `/heap-guardian/leak` requests to inspect `analysis.topGrowers`, `analysis.topTrends`, `analysis.topPayloadKeys`, `analysis.topExpanders`, `analysis.suspects`, and `analysis.alerts`.
 
-`/heap-guardian/snapshot` writes a forced heap snapshot to `/data/heap-snapshots` in the Docker container.
+`/heap-guardian/dashboard` returns a simple HTML dashboard generated from the metrics JSON.
+
+`/heap-guardian/snapshot` writes a forced heap snapshot to `/data/heap-snapshots` in the Docker container and updates snapshot metadata for `/heap-guardian/metrics`.
 
 `/heap-guardian/metrics` returns JSON. `/heap-guardian/metrics/prometheus` returns Prometheus text exposition format.
 
@@ -243,3 +363,5 @@ For a production setup, prefer one of these patterns:
 - Use a low `runtime-profiler` sample rate on busy systems.
 - Use heap snapshots sparingly because snapshot creation can pause Node-RED and temporarily increase memory pressure.
 - Treat `--expose-gc` as an optional diagnostic switch, not a fix for retained references.
+- Keep `auto-gc-guard` disabled until you have alert thresholds and heap pressure behavior that match your environment.
+- Disable high-cardinality Prometheus profiler record metrics if the label set is too large for your monitoring system.

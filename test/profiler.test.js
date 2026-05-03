@@ -91,6 +91,35 @@ test("recordProfile uses null-safe growth values for the first sample", () => {
   assert.equal(record.growthRateBytesPerMinute, null);
 });
 
+test("recordProfile keeps bounded history", () => {
+  const context = createContext();
+  const meta = {
+    flowId: "flow-1",
+    flowName: "Flow 1",
+    nodeId: "node-1",
+    nodeName: "profiler",
+    nodeType: "payload-profiler"
+  };
+
+  [10, 20, 40].forEach((bytes, index) => {
+    recordProfile(context, meta, {
+      kind: "payload",
+      property: "payload",
+      bytes,
+      type: "object"
+    }, {
+      historyLimit: 2,
+      now: new Date(`2026-05-03T00:0${index}:00.000Z`)
+    });
+  });
+
+  const [record] = getProfilerReport(context).records;
+
+  assert.equal(record.history.length, 2);
+  assert.equal(record.history[0].bytes, 20);
+  assert.equal(record.history[1].bytes, 40);
+});
+
 test("getProfilerReport analysis returns top growers sorted by delta", () => {
   const context = createContext();
   const meta = {
@@ -219,11 +248,51 @@ test("getProfilerReport analysis returns context growers", () => {
     now: new Date("2026-05-03T00:01:00.000Z")
   });
 
-  const [grower] = getProfilerReport(context, { limit: 10 }).analysis.topContextGrowers;
+  const report = getProfilerReport(context, { limit: 10 });
+  const [grower] = report.analysis.topContextGrowers;
+  const [trend] = report.analysis.topContextTrends;
 
   assert.equal(grower.kind, "context");
   assert.equal(grower.contextKey, "cache");
   assert.equal(grower.deltaBytes, 3072);
+  assert.equal(trend.contextKey, "cache");
+  assert.equal(report.dashboard.tables.contextTrends[0].contextKey, "cache");
+});
+
+test("getProfilerReport analysis returns trends and alerts", () => {
+  const context = createContext();
+  const meta = {
+    flowId: "flow-1",
+    flowName: "Flow 1",
+    nodeId: "node-1",
+    nodeName: "profile context",
+    nodeType: "context-profiler"
+  };
+
+  [1, 2, 3, 4].forEach((mb, index) => {
+    recordProfile(context, meta, {
+      kind: "context",
+      scope: "global",
+      property: "heapGuardianLeak",
+      contextKey: "heapGuardianLeak",
+      bytes: mb * 1024 * 1024,
+      type: "array"
+    }, {
+      now: new Date(`2026-05-03T00:0${index}:00.000Z`)
+    });
+  });
+
+  const report = getProfilerReport(context, { limit: 10 });
+  const [trend] = report.analysis.topTrends;
+  const [alert] = report.analysis.alerts;
+
+  assert.equal(trend.contextKey, "heapGuardianLeak");
+  assert.equal(trend.consecutiveGrowthCount, 3);
+  assert.equal(trend.totalGrowthBytes, 3 * 1024 * 1024);
+  assert.equal(alert.severity, "warning");
+  assert.equal(alert.kind, "context-growth");
+  assert.match(alert.summary, /heapGuardianLeak grew by 3MB/);
+  assert.equal(report.dashboard.status, "warning");
 });
 
 test("getProfilerReport analysis compares runtime send and receive payload sizes", () => {

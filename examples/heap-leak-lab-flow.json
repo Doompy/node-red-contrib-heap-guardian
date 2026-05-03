@@ -676,6 +676,11 @@
     "limit": 20,
     "sortBy": "lastBytes",
     "includeSpaces": false,
+    "includeProfilerRecordMetrics": true,
+    "maxPrometheusRecords": 20,
+    "snapshotDiffEnabled": false,
+    "maxSnapshotDiffBytes": 134217728,
+    "snapshotDiffTimeoutMs": 30000,
     "x": 420,
     "y": 960,
     "wires": [
@@ -721,6 +726,11 @@
     "limit": 20,
     "sortBy": "lastBytes",
     "includeSpaces": false,
+    "includeProfilerRecordMetrics": true,
+    "maxPrometheusRecords": 20,
+    "snapshotDiffEnabled": false,
+    "maxSnapshotDiffBytes": 134217728,
+    "snapshotDiffTimeoutMs": 30000,
     "x": 500,
     "y": 1040,
     "wires": [
@@ -738,6 +748,70 @@
     "headers": {},
     "x": 770,
     "y": 1040,
+    "wires": []
+  },
+  {
+    "id": "f1bbcf18e0153d2b",
+    "type": "http in",
+    "z": "34a83b3fbe73f8f8",
+    "name": "GET /heap-guardian/dashboard",
+    "url": "/heap-guardian/dashboard",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 190,
+    "y": 1120,
+    "wires": [
+      [
+        "2a59d77cbef9c488"
+      ]
+    ]
+  },
+  {
+    "id": "2a59d77cbef9c488",
+    "type": "metrics-report",
+    "z": "34a83b3fbe73f8f8",
+    "name": "dashboard metrics",
+    "format": "json",
+    "limit": 20,
+    "sortBy": "lastBytes",
+    "includeSpaces": false,
+    "includeProfilerRecordMetrics": true,
+    "maxPrometheusRecords": 20,
+    "snapshotDiffEnabled": false,
+    "maxSnapshotDiffBytes": 134217728,
+    "snapshotDiffTimeoutMs": 30000,
+    "x": 470,
+    "y": 1120,
+    "wires": [
+      [
+        "5efa5495036ef5e1"
+      ]
+    ]
+  },
+  {
+    "id": "5efa5495036ef5e1",
+    "type": "heap-dashboard",
+    "z": "34a83b3fbe73f8f8",
+    "name": "render dashboard",
+    "title": "Heap Guardian Leak Lab",
+    "x": 720,
+    "y": 1120,
+    "wires": [
+      [
+        "0258c61d58e87f9b"
+      ]
+    ]
+  },
+  {
+    "id": "0258c61d58e87f9b",
+    "type": "http response",
+    "z": "34a83b3fbe73f8f8",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 970,
+    "y": 1120,
     "wires": []
   }
 ]

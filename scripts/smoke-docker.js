@@ -62,6 +62,19 @@ async function getJson(url) {
   return JSON.parse(text);
 }
 
+async function getText(url) {
+  const response = await fetch(url, {
+    headers: headers()
+  });
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`${url} returned ${response.status}: ${text}`);
+  }
+
+  return text;
+}
+
 async function waitForNodeRed() {
   const deadline = Date.now() + 60000;
   let lastError;
@@ -132,16 +145,36 @@ async function main() {
   await new Promise((resolve) => setTimeout(resolve, 500));
   await getJson(`${nodeRedUrl}/heap-guardian/payload?count=192&bytes=16384`);
   await new Promise((resolve) => setTimeout(resolve, 500));
+  await getJson(`${nodeRedUrl}/heap-guardian/leak?count=32&bytes=16384`);
+  await getJson(`${nodeRedUrl}/heap-guardian/profile/context`);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  await getJson(`${nodeRedUrl}/heap-guardian/leak?count=64&bytes=16384`);
+  await getJson(`${nodeRedUrl}/heap-guardian/profile/context`);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  await getJson(`${nodeRedUrl}/heap-guardian/leak?count=96&bytes=16384`);
+  await getJson(`${nodeRedUrl}/heap-guardian/profile/context`);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  await getJson(`${nodeRedUrl}/heap-guardian/snapshot`);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  await getJson(`${nodeRedUrl}/heap-guardian/snapshot`);
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   const report = await getJson(`${nodeRedUrl}/heap-guardian/profile/report`);
   const filtered = await getJson(`${nodeRedUrl}/heap-guardian/profile/report?kind=runtime-payload-key&property=payload.items&limit=3`);
   const metrics = await getJson(`${nodeRedUrl}/heap-guardian/metrics?kind=payload-key&limit=5`);
+  const prometheus = await getText(`${nodeRedUrl}/heap-guardian/metrics/prometheus`);
+  const dashboardHtml = await getText(`${nodeRedUrl}/heap-guardian/dashboard`);
 
   const itemsKey = report.analysis.topPayloadKeys.find((item) => item.property === "payload.items" || item.property === "payload.items[out:0]");
   const expander = report.analysis.topExpanders.find((item) => item.nodeName === "build large payload" && item.property === "payload");
   const suspect = report.analysis.suspects[0];
+  const contextTrend = report.analysis.topContextTrends.find((item) => item.contextKey === "heapGuardianLeak");
 
   assert(report.analysis.topGrowers.length > 0, "Expected topGrowers to contain records");
+  assert(report.analysis.alerts.length > 0, "Expected alerts to contain leak warnings");
+  assert(report.analysis.topTrends.length > 0, "Expected topTrends to contain records");
+  assert(contextTrend, "Expected topContextTrends to include heapGuardianLeak");
+  assert(report.dashboard && report.dashboard.status !== "ok", "Expected profiler dashboard status to reflect alerts");
   assert(itemsKey, "Expected topPayloadKeys to include payload.items");
   assert(expander, "Expected topExpanders to include build large payload");
   assert(expander.expansionRatio === null, "Expected small receive baseline to suppress expansion ratio");
@@ -149,6 +182,10 @@ async function main() {
   assert(suspect && suspect.summary && suspect.severity, "Expected suspects to include summary and severity");
   assert(filtered.matchedRecords >= 1, "Expected filtered report to match runtime payload key records");
   assert(metrics.profiler && metrics.profiler.analysis, "Expected metrics JSON to include profiler analysis");
+  assert(metrics.dashboard && metrics.dashboard.status !== "ok", "Expected metrics dashboard status");
+  assert(metrics.snapshots && metrics.snapshots.latest && metrics.snapshots.comparison.previous, "Expected snapshot metadata comparison");
+  assert(/heap_guardian_profiler_alerts\{severity="warning"\}/.test(prometheus), "Expected Prometheus alert summary metrics");
+  assert(/Heap Guardian Leak Lab/.test(dashboardHtml), "Expected dashboard HTML endpoint");
 
   console.log(JSON.stringify({
     ok: true,
@@ -165,6 +202,13 @@ async function main() {
       delta: expander.deltaBytesFormatted,
       ratioStatus: expander.ratioStatus
     },
+    contextTrend: {
+      key: contextTrend.contextKey,
+      growth: contextTrend.totalGrowthBytesFormatted
+    },
+    alertCount: report.analysis.alerts.length,
+    dashboardStatus: metrics.dashboard.status,
+    snapshotComparison: metrics.snapshots.comparison.previous,
     suspect: {
       severity: suspect.severity,
       summary: suspect.summary

@@ -7,7 +7,12 @@
       format: { value: "json" },
       limit: { value: 20, validate: RED.validators.number() },
       sortBy: { value: "lastBytes" },
-      includeSpaces: { value: false }
+      includeSpaces: { value: false },
+      includeProfilerRecordMetrics: { value: true },
+      maxPrometheusRecords: { value: 20, validate: RED.validators.number(true) },
+      snapshotDiffEnabled: { value: false },
+      maxSnapshotDiffBytes: { value: 134217728, validate: RED.validators.number(true) },
+      snapshotDiffTimeoutMs: { value: 30000, validate: RED.validators.number(true) }
     },
     inputs: 1,
     outputs: 1,
@@ -48,10 +53,36 @@
     <input type="checkbox" id="node-input-includeSpaces" style="display:inline-block; width:auto; vertical-align:top;">
     <span>Include V8 heap space details in JSON output</span>
   </div>
+  <div class="form-row">
+    <label for="node-input-includeProfilerRecordMetrics"><i class="fa fa-tags"></i> Records</label>
+    <input type="checkbox" id="node-input-includeProfilerRecordMetrics" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Include labeled profiler record metrics in Prometheus output</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxPrometheusRecords"><i class="fa fa-table"></i> Max metrics</label>
+    <input type="number" id="node-input-maxPrometheusRecords" min="0" step="1" style="width:100px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-snapshotDiffEnabled"><i class="fa fa-flask"></i> Diff</label>
+    <input type="checkbox" id="node-input-snapshotDiffEnabled" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Enable experimental snapshot object diff in JSON output</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxSnapshotDiffBytes"><i class="fa fa-file"></i> Diff max</label>
+    <input type="number" id="node-input-maxSnapshotDiffBytes" min="0" step="1" style="width:140px;">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-snapshotDiffTimeoutMs"><i class="fa fa-clock-o"></i> Diff timeout</label>
+    <input type="number" id="node-input-snapshotDiffTimeoutMs" min="1" step="1" style="width:120px;">
+    <span>ms</span>
+  </div>
 </script>
 
 <script type="text/html" data-help-name="metrics-report">
   <p>Outputs Heap Guardian memory and profiler metrics as JSON or Prometheus text.</p>
   <p>Place it behind an HTTP In node to expose an operational metrics endpoint.</p>
-  <p>JSON output includes profiler analysis. Prometheus output intentionally keeps only stable memory and record metrics.</p>
+  <p>JSON output includes profiler analysis, dashboard summary, and snapshot metadata. Prometheus output includes alert, suspect, and trend summary metrics.</p>
+  <p>Set <code>includeProfilerRecordMetrics=false</code> to suppress high-cardinality profiler record metrics in Prometheus output.</p>
+  <p>Set <code>snapshotDiffEnabled=true</code> only when you want the experimental constructor/type heap snapshot diff in JSON output.</p>
 </script>
