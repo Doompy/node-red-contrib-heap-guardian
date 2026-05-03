@@ -3,7 +3,12 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { classify, estimateSize } = require("../lib/size");
+const {
+  classify,
+  estimateSize,
+  formatChildProperty,
+  readTopLevelEntries
+} = require("../lib/size");
 
 test("estimateSize measures common payload types", () => {
   assert.equal(estimateSize("abcd").bytes, 4);
@@ -26,4 +31,20 @@ test("estimateSize marks deep objects as truncated", () => {
   const estimate = estimateSize(value, { maxDepth: 2 });
 
   assert.equal(estimate.truncated, true);
+});
+
+test("readTopLevelEntries returns largest immediate child properties", () => {
+  const entries = readTopLevelEntries({
+    id: "a",
+    items: ["x".repeat(100), "y".repeat(100)],
+    "odd key": "z".repeat(50)
+  }, {
+    parentProperty: "payload",
+    maxKeys: 2
+  });
+
+  assert.equal(entries.length, 2);
+  assert.equal(entries[0].property, "payload.items");
+  assert.equal(entries[1].property, "payload[\"odd key\"]");
+  assert.equal(formatChildProperty("payload", "items"), "payload.items");
 });

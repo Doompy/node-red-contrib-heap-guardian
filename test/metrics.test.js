@@ -47,6 +47,7 @@ test("createPrometheusMetrics includes memory and profiler metrics", () => {
   const report = createMetricsReport(context, { limit: 10 });
   const text = createPrometheusMetrics(report);
 
+  assert.equal(report.profiler.analysis.topGrowers.length, 0);
   assert.match(text, /heap_guardian_memory_bytes\{type="heap_used"\}/);
   assert.match(text, /heap_guardian_profiler_records 1/);
   assert.match(text, /heap_guardian_profiler_record_bytes\{.*flow="Flow 1"/);

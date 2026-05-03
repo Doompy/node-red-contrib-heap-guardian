@@ -12,6 +12,7 @@ test("normalizeConfig clamps runtime profiler sample rate", () => {
   assert.equal(normalizeConfig({ sampleRate: 250 }).sampleRate, 1);
   assert.equal(normalizeConfig({ sampleRate: -1 }).sampleRate, 0);
   assert.equal(normalizeConfig({ sampleRate: 25 }).sampleRate, 0.25);
+  assert.equal(normalizeConfig({ maxKeyRecords: -1 }).maxKeyRecords, 0);
 });
 
 test("shouldProfileNode excludes Heap Guardian nodes by default", () => {

@@ -1,6 +1,6 @@
 "use strict";
 
-const { estimateSize, formatBytes } = require("../lib/size");
+const { estimateSize, formatBytes, readTopLevelEntries } = require("../lib/size");
 const { getNodeMeta, recordProfile } = require("../lib/profiler");
 
 function parseNumber(value, fallback) {
@@ -37,6 +37,8 @@ module.exports = function registerPayloadProfiler(RED) {
     const criticalBytes = parseNumber(config.criticalBytes, 8 * 1024 * 1024);
     const maxDepth = parseNumber(config.maxDepth, 8);
     const maxEntries = parseNumber(config.maxEntries, 10000);
+    const maxKeyRecords = Math.max(0, parseNumber(config.maxKeyRecords, 10));
+    const maxKeyScan = Math.max(maxKeyRecords, parseNumber(config.maxKeyScan, 50));
 
     node.on("input", (msg, send, done) => {
       const nodeSend = send || ((message) => node.send(message));
@@ -50,6 +52,13 @@ module.exports = function registerPayloadProfiler(RED) {
         const meta = getNodeMeta(RED, node, config, "payload-profiler");
         const value = getMessageValue(RED, msg, property);
         const estimate = estimateSize(value, { maxDepth, maxEntries });
+        const topKeys = readTopLevelEntries(value, {
+          maxDepth,
+          maxEntries,
+          maxKeys: maxKeyRecords,
+          maxScanKeys: maxKeyScan,
+          parentProperty: property
+        });
         const record = recordProfile(node.context().global, meta, {
           kind: "payload",
           property,
@@ -59,10 +68,23 @@ module.exports = function registerPayloadProfiler(RED) {
           circularRefs: estimate.circularRefs
         });
 
+        for (const entry of topKeys) {
+          recordProfile(node.context().global, meta, {
+            kind: "payload-key",
+            property: entry.property,
+            contextKey: entry.key,
+            bytes: entry.bytes,
+            type: entry.type,
+            truncated: entry.truncated,
+            circularRefs: entry.circularRefs
+          });
+        }
+
         const profile = {
           ...estimate,
           property,
           bytesFormatted: formatBytes(estimate.bytes),
+          topKeys,
           flowId: meta.flowId,
           flowName: meta.flowName,
           nodeId: meta.nodeId,

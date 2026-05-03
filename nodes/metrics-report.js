@@ -7,6 +7,41 @@ function parseNumber(value, fallback) {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 }
 
+function readQuery(msg) {
+  return msg && msg.req && msg.req.query && typeof msg.req.query === "object"
+    ? msg.req.query
+    : {};
+}
+
+function readReportOptions(msg, defaults) {
+  const query = readQuery(msg);
+  const messageFilter = (msg.heapGuardian && msg.heapGuardian.profilerFilter) || msg.profilerFilter || {};
+  const filter = {
+    ...messageFilter
+  };
+
+  [
+    "kind",
+    "flowId",
+    "nodeId",
+    "nodeType",
+    "property",
+    "minBytes",
+    "minDeltaBytes"
+  ].forEach((key) => {
+    if (query[key] !== undefined) {
+      filter[key] = query[key];
+    }
+  });
+
+  return {
+    includeSpaces: defaults.includeSpaces,
+    limit: parseNumber(query.limit, defaults.limit),
+    sortBy: query.sortBy || defaults.sortBy,
+    filter
+  };
+}
+
 module.exports = function registerMetricsReport(RED) {
   function MetricsReportNode(config) {
     RED.nodes.createNode(this, config);
@@ -26,11 +61,10 @@ module.exports = function registerMetricsReport(RED) {
       });
 
       try {
-        const report = createMetricsReport(node.context().global, {
-          includeSpaces,
-          limit,
-          sortBy
-        });
+        const report = createMetricsReport(
+          node.context().global,
+          readReportOptions(msg, { includeSpaces, limit, sortBy })
+        );
 
         if (format === "prometheus") {
           msg.payload = createPrometheusMetrics(report);

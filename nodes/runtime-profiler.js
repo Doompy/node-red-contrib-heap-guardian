@@ -43,6 +43,8 @@ module.exports = function registerRuntimeProfilerNode(RED) {
         minBytes: parseNumber(config.minBytes, 0),
         maxDepth: parseNumber(config.maxDepth, 6),
         maxEntries: parseNumber(config.maxEntries, 5000),
+        maxKeyRecords: parseNumber(config.maxKeyRecords, 10),
+        maxKeyScan: parseNumber(config.maxKeyScan, 50),
         maxRecords: parseNumber(config.maxRecords, 1000),
         excludePackageNodes: config.excludePackageNodes !== false && config.excludePackageNodes !== "false",
         includeNodeTypes: config.includeNodeTypes || "",

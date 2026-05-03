@@ -8,6 +8,40 @@ function parseNumber(value, fallback) {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 }
 
+function readQuery(msg) {
+  return msg && msg.req && msg.req.query && typeof msg.req.query === "object"
+    ? msg.req.query
+    : {};
+}
+
+function readReportOptions(msg, defaults) {
+  const query = readQuery(msg);
+  const messageFilter = (msg.heapGuardian && msg.heapGuardian.profilerFilter) || msg.profilerFilter || {};
+  const filter = {
+    ...messageFilter
+  };
+
+  [
+    "kind",
+    "flowId",
+    "nodeId",
+    "nodeType",
+    "property",
+    "minBytes",
+    "minDeltaBytes"
+  ].forEach((key) => {
+    if (query[key] !== undefined) {
+      filter[key] = query[key];
+    }
+  });
+
+  return {
+    limit: parseNumber(query.limit, defaults.limit),
+    sortBy: query.sortBy || defaults.sortBy,
+    filter
+  };
+}
+
 module.exports = function registerProfilerReport(RED) {
   function ProfilerReportNode(config) {
     RED.nodes.createNode(this, config);
@@ -27,13 +61,18 @@ module.exports = function registerProfilerReport(RED) {
 
       try {
         const globalContext = node.context().global;
-        const report = getProfilerReport(globalContext, { limit, sortBy });
+        const report = getProfilerReport(globalContext, readReportOptions(msg, { limit, sortBy }));
 
         report.records = report.records.map((record) => ({
           ...record,
+          previousBytesFormatted: record.previousBytes == null ? null : formatBytes(record.previousBytes),
           lastBytesFormatted: formatBytes(record.lastBytes),
           maxBytesFormatted: formatBytes(record.maxBytes),
-          totalBytesFormatted: formatBytes(record.totalBytes)
+          totalBytesFormatted: formatBytes(record.totalBytes),
+          deltaBytesFormatted: formatBytes(record.deltaBytes || 0),
+          growthRateFormatted: record.growthRateBytesPerMinute == null
+            ? null
+            : `${formatBytes(record.growthRateBytesPerMinute)}/min`
         }));
 
         msg.payload = report;

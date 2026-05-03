@@ -59,6 +59,7 @@ msg.heapGuardian.payloadProfile
 ```
 
 It also records an aggregate sample in global context, keyed by flow id, profiler node id, and message property.
+For object-like payloads it can also record the largest immediate child keys, such as `payload.items` or `payload.cache`.
 
 ### context-profiler
 
@@ -75,7 +76,14 @@ The profiler excludes its own `heapGuardianProfiler` aggregation key by default.
 
 ### profiler-report
 
-Outputs the aggregate records collected by `payload-profiler` and `context-profiler`.
+Outputs aggregate records collected by `payload-profiler`, `context-profiler`, and `runtime-profiler`.
+
+The report also includes:
+
+- `analysis.topGrowers`: records whose latest sample grew the most
+- `analysis.topPayloadKeys`: payload child properties carrying or growing the most data
+- `analysis.topExpanders`: runtime nodes whose send payload is larger than their receive payload
+- `analysis.suspects`: scored records and runtime expansions most likely to explain retained or amplified data
 
 Sort options include:
 
@@ -83,6 +91,14 @@ Sort options include:
 - max observed size
 - total observed bytes
 - sample count
+
+HTTP flows can filter report output with query parameters:
+
+```text
+/heap-guardian/profile/report?kind=runtime-payload&minDeltaBytes=1048576
+/heap-guardian/profile/report?property=payload.items
+/heap-guardian/metrics?nodeType=function&limit=5
+```
 
 ### runtime-profiler
 
@@ -94,6 +110,7 @@ It records samples by:
 - node name/type/id
 - direction, such as send or receive
 - property, such as `payload` or `payload.data`
+- largest immediate child properties, such as `payload.items`
 
 Use a low sample rate in busy production systems. The leak lab example uses 100% sampling only so the behavior is easy to see locally.
 
@@ -160,7 +177,7 @@ Invoke-RestMethod http://localhost:1880/heap-guardian/clear
 
 `/heap-guardian/profile/context` shows which context keys are retaining memory. `/heap-guardian/profile/report` shows aggregate profiler records by flow/profiler node/key.
 
-The leak lab also includes a `runtime-profiler` node that automatically records large payloads sent by regular flow nodes. It excludes Heap Guardian's own nodes by default so the report focuses on application flow behavior.
+The leak lab also includes a `runtime-profiler` node that automatically records large payloads sent and received by regular flow nodes. It excludes Heap Guardian's own nodes by default so the report focuses on application flow behavior. Call `/heap-guardian/profile/report` after multiple `/heap-guardian/payload` or `/heap-guardian/leak` requests to inspect `analysis.topGrowers`, `analysis.topPayloadKeys`, `analysis.topExpanders`, and `analysis.suspects`.
 
 `/heap-guardian/snapshot` writes a forced heap snapshot to `/data/heap-snapshots` in the Docker container.
 
