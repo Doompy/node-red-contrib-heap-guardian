@@ -13,6 +13,12 @@
       property: { value: "" },
       minBytes: { value: "", validate: RED.validators.number(true) },
       minDeltaBytes: { value: "", validate: RED.validators.number(true) },
+      warningGrowthSamples: { value: "", validate: RED.validators.number(true) },
+      criticalGrowthSamples: { value: "", validate: RED.validators.number(true) },
+      warningGrowthBytes: { value: "", validate: RED.validators.number(true) },
+      criticalGrowthBytes: { value: "", validate: RED.validators.number(true) },
+      warningExpansionBytes: { value: "", validate: RED.validators.number(true) },
+      criticalExpansionBytes: { value: "", validate: RED.validators.number(true) },
       clearAfterRead: { value: false }
     },
     inputs: 1,
@@ -73,6 +79,34 @@
     <span>bytes</span>
   </div>
   <div class="form-row">
+    <label for="node-input-warningGrowthSamples"><i class="fa fa-warning"></i> Warn samples</label>
+    <input type="number" id="node-input-warningGrowthSamples" min="1" step="1" style="width:90px;" placeholder="3">
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalGrowthSamples"><i class="fa fa-warning"></i> Crit samples</label>
+    <input type="number" id="node-input-criticalGrowthSamples" min="1" step="1" style="width:90px;" placeholder="5">
+  </div>
+  <div class="form-row">
+    <label for="node-input-warningGrowthBytes"><i class="fa fa-database"></i> Warn growth</label>
+    <input type="number" id="node-input-warningGrowthBytes" min="0" step="1" style="width:140px;" placeholder="1048576">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalGrowthBytes"><i class="fa fa-database"></i> Crit growth</label>
+    <input type="number" id="node-input-criticalGrowthBytes" min="0" step="1" style="width:140px;" placeholder="8388608">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-warningExpansionBytes"><i class="fa fa-expand"></i> Warn expand</label>
+    <input type="number" id="node-input-warningExpansionBytes" min="0" step="1" style="width:140px;" placeholder="1048576">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalExpansionBytes"><i class="fa fa-expand"></i> Crit expand</label>
+    <input type="number" id="node-input-criticalExpansionBytes" min="0" step="1" style="width:140px;" placeholder="8388608">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
     <label for="node-input-clearAfterRead"><i class="fa fa-trash"></i> Clear</label>
     <input type="checkbox" id="node-input-clearAfterRead" style="display:inline-block; width:auto; vertical-align:top;">
     <span>Clear profiler records after reading</span>
@@ -82,6 +116,7 @@
 <script type="text/html" data-help-name="profiler-report">
   <p>Outputs the aggregated Heap Guardian profiler records from global context.</p>
   <p>Use this after <code>payload-profiler</code>, <code>context-profiler</code>, or <code>runtime-profiler</code> nodes have sampled traffic.</p>
-  <p>The output includes analysis lists for top growers, payload keys, runtime expanders, and scored suspects.</p>
+  <p>The output includes analysis lists for top growers, trends, alerts, payload keys, runtime expanders, and scored suspects.</p>
+  <p>Alert threshold fields are optional. Leave them blank to use the built-in defaults.</p>
   <p>Node settings, HTTP query parameters, or <code>msg.profilerFilter</code> can filter by <code>kind</code>, <code>flowId</code>, <code>nodeId</code>, <code>nodeType</code>, <code>property</code>, <code>minBytes</code>, or <code>minDeltaBytes</code>.</p>
 </script>

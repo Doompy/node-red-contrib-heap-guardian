@@ -39,6 +39,12 @@ function readReportOptions(msg, defaults) {
   return {
     limit: parseNumber(query.limit, defaults.limit),
     sortBy: query.sortBy || defaults.sortBy,
+    warningGrowthSamples: parseNumber(query.warningGrowthSamples, defaults.warningGrowthSamples),
+    criticalGrowthSamples: parseNumber(query.criticalGrowthSamples, defaults.criticalGrowthSamples),
+    warningGrowthBytes: parseNumber(query.warningGrowthBytes, defaults.warningGrowthBytes),
+    criticalGrowthBytes: parseNumber(query.criticalGrowthBytes, defaults.criticalGrowthBytes),
+    warningExpansionBytes: parseNumber(query.warningExpansionBytes, defaults.warningExpansionBytes),
+    criticalExpansionBytes: parseNumber(query.criticalExpansionBytes, defaults.criticalExpansionBytes),
     filter
   };
 }
@@ -50,6 +56,12 @@ module.exports = function registerProfilerReport(RED) {
     const node = this;
     const limit = parseNumber(config.limit, 20);
     const sortBy = config.sortBy || "lastBytes";
+    const warningGrowthSamples = parseNumber(config.warningGrowthSamples, undefined);
+    const criticalGrowthSamples = parseNumber(config.criticalGrowthSamples, undefined);
+    const warningGrowthBytes = parseNumber(config.warningGrowthBytes, undefined);
+    const criticalGrowthBytes = parseNumber(config.criticalGrowthBytes, undefined);
+    const warningExpansionBytes = parseNumber(config.warningExpansionBytes, undefined);
+    const criticalExpansionBytes = parseNumber(config.criticalExpansionBytes, undefined);
     const filter = {
       kind: config.kind || "",
       flowId: config.flowId || "",
@@ -71,7 +83,17 @@ module.exports = function registerProfilerReport(RED) {
 
       try {
         const globalContext = node.context().global;
-        const report = getProfilerReport(globalContext, readReportOptions(msg, { limit, sortBy, filter }));
+        const report = getProfilerReport(globalContext, readReportOptions(msg, {
+          limit,
+          sortBy,
+          filter,
+          warningGrowthSamples,
+          criticalGrowthSamples,
+          warningGrowthBytes,
+          criticalGrowthBytes,
+          warningExpansionBytes,
+          criticalExpansionBytes
+        }));
 
         report.records = report.records.map((record) => ({
           ...record,

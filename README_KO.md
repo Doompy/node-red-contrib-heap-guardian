@@ -106,6 +106,8 @@ Node-RED runtime hook을 등록해서 메시지가 flow를 지나갈 때 propert
 
 바쁜 운영 환경에서는 sample rate를 낮게 두는 것이 좋습니다. leak lab 예제는 동작을 쉽게 확인하기 위해 100% sampling을 사용합니다.
 
+adaptive sampling은 opt-in 기능입니다. 활성화하면 warning/critical alert 또는 높은 heap pressure 상황에서 `runtime-profiler`가 sample rate를 일시적으로 올릴 수 있습니다. 기본 비활성화이므로 기존 flow는 설정된 고정 sample rate를 그대로 사용합니다.
+
 ### profiler-report
 
 `payload-profiler`, `context-profiler`, `runtime-profiler`가 수집한 aggregate record를 출력합니다.
@@ -124,6 +126,8 @@ Node-RED runtime hook을 등록해서 메시지가 flow를 지나갈 때 propert
 - `dashboard`: dashboard-ready status/cards/tables
 
 `analysis.topExpanders`는 receive baseline이 너무 작으면 ratio를 계산하지 않습니다. 작은 inbound payload 때문에 misleading ratio가 생기는 것을 피하기 위함입니다. 이 경우에도 `deltaBytes`와 `ratioStatus`는 표시됩니다.
+
+alert 항목에는 deduplication을 위한 stable `id`가 포함됩니다. 기본 alert threshold가 환경에 맞지 않으면 node 설정이나 HTTP query parameter로 growth sample 수, growth bytes, runtime expansion bytes 기준을 조정할 수 있습니다.
 
 각 profiler record는 최근 sample history ring buffer를 갖습니다. 기본 limit은 10입니다.
 
@@ -163,6 +167,8 @@ JSON 출력:
 - `dashboard`: status/cards/tables
 - `snapshots`: latest/previous/baseline/comparison, 선택적 experimental object diff
 
+Metrics JSON에는 profiler overhead estimate와 async snapshot diff queue status도 포함됩니다.
+
 Prometheus 출력에는 memory gauge, heap pressure ratio, profiler record metric, low-cardinality summary metric이 포함됩니다.
 
 ```text
@@ -186,6 +192,8 @@ heap_guardian_profiler_trends
 
 Node-RED Dashboard 패키지에 의존하지 않습니다. HTTP Response, Dashboard template, ui-template 등에 연결해서 사용할 수 있습니다.
 
+생성된 HTML에는 client-side search, severity filter, table sorting이 포함됩니다. auto-refresh는 선택 기능이며 기본 비활성화입니다.
+
 일반적인 HTTP flow:
 
 ```text
@@ -208,6 +216,23 @@ HTTP In -> metrics-report -> heap-dashboard -> HTTP Response
 
 수동 GC는 여전히 `--expose-gc`가 필요합니다. 없으면 `msg.heapGuardian.autoGc`에 structured skipped result를 기록합니다.
 
+### auto-snapshot-guard
+
+입력 report에 qualifying alert가 있고 현재 heap pressure가 threshold 이상일 때만 heap snapshot을 저장합니다.
+
+기본값은 disabled이며 background timer를 만들지 않습니다. 반드시 message가 들어올 때만 평가합니다.
+
+기본 guard 조건:
+
+- `enabled`: false
+- `requiredSeverity`: critical
+- heap threshold: 85%
+- cooldown: 300 seconds
+- max snapshots per hour: 3
+- async diff after snapshot: false
+
+결과는 `msg.heapGuardian.autoSnapshot`에 기록됩니다. snapshot 이후 async diff queue도 선택적으로 사용할 수 있지만 기본 비활성화입니다.
+
 ## Experimental Snapshot Diff
 
 `metrics-report`는 latest/previous V8 heap snapshot을 constructor/type 기준으로 비교할 수 있습니다. heap snapshot parsing은 비쌀 수 있으므로 기본 비활성화입니다.
@@ -225,6 +250,14 @@ HTTP In -> metrics-report -> heap-dashboard -> HTTP Response
 - `snapshotDiffTimeoutMs`: 30000
 
 diff 결과는 constructor/type별 `topAdded`, `topGrowing`, `topRemoved`를 반환하며 `countDelta`, `selfSizeDelta` 중심입니다. retainer path 분석과 full dominator retained-size diff는 이번 범위에 포함하지 않습니다.
+
+HTTP endpoint를 더 안전하게 운영하려면 metrics request를 blocking하는 sync diff 대신 async diff를 사용할 수 있습니다.
+
+```text
+/heap-guardian/metrics?snapshotDiffAsyncEnabled=true
+```
+
+Async diff는 job status와 latest result를 Node-RED global context에 저장하고 `snapshots.diffStatus`, `snapshots.diffQueue`, `snapshots.latestDiffResult` 아래에 노출합니다.
 
 ## Persistent History
 
@@ -373,4 +406,5 @@ docker compose up --build
 - heap snapshot 생성은 Node-RED를 멈추고 temporary memory pressure를 키울 수 있으므로 신중히 사용하십시오.
 - `--expose-gc`는 retained reference 문제를 해결하는 기능이 아니라 진단용 선택지로 봐야 합니다.
 - `auto-gc-guard`는 환경에 맞는 alert threshold와 heap pressure behavior를 확인하기 전까지 disabled 상태로 두십시오.
+- `auto-snapshot-guard`와 adaptive sampling은 로컬에서 threshold를 검증하기 전까지 disabled 상태로 두십시오.
 - Prometheus label set이 커지는 환경에서는 high-cardinality profiler record metric을 비활성화하십시오.

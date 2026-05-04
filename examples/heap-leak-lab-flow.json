@@ -679,8 +679,10 @@
     "includeProfilerRecordMetrics": true,
     "maxPrometheusRecords": 20,
     "snapshotDiffEnabled": false,
+    "snapshotDiffAsyncEnabled": false,
     "maxSnapshotDiffBytes": 134217728,
     "snapshotDiffTimeoutMs": 30000,
+    "snapshotDiffLimit": 20,
     "x": 420,
     "y": 960,
     "wires": [
@@ -729,8 +731,10 @@
     "includeProfilerRecordMetrics": true,
     "maxPrometheusRecords": 20,
     "snapshotDiffEnabled": false,
+    "snapshotDiffAsyncEnabled": false,
     "maxSnapshotDiffBytes": 134217728,
     "snapshotDiffTimeoutMs": 30000,
+    "snapshotDiffLimit": 20,
     "x": 500,
     "y": 1040,
     "wires": [
@@ -779,8 +783,10 @@
     "includeProfilerRecordMetrics": true,
     "maxPrometheusRecords": 20,
     "snapshotDiffEnabled": false,
+    "snapshotDiffAsyncEnabled": false,
     "maxSnapshotDiffBytes": 134217728,
     "snapshotDiffTimeoutMs": 30000,
+    "snapshotDiffLimit": 20,
     "x": 470,
     "y": 1120,
     "wires": [

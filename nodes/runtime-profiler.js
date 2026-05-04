@@ -46,6 +46,11 @@ module.exports = function registerRuntimeProfilerNode(RED) {
         maxKeyRecords: parseNumber(config.maxKeyRecords, 10),
         maxKeyScan: parseNumber(config.maxKeyScan, 50),
         maxRecords: parseNumber(config.maxRecords, 1000),
+        adaptiveSamplingEnabled: config.adaptiveSamplingEnabled === true || config.adaptiveSamplingEnabled === "true",
+        adaptiveWarningSampleRate: parseNumber(config.adaptiveWarningSampleRate, 50),
+        adaptiveCriticalSampleRate: parseNumber(config.adaptiveCriticalSampleRate, 100),
+        adaptiveHeapThreshold: parseNumber(config.adaptiveHeapThreshold, 85),
+        adaptiveDecisionTtlMs: parseNumber(config.adaptiveDecisionTtlMs, 2000),
         excludePackageNodes: config.excludePackageNodes !== false && config.excludePackageNodes !== "false",
         includeNodeTypes: config.includeNodeTypes || "",
         excludeNodeTypes: config.excludeNodeTypes || ""

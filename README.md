@@ -94,6 +94,7 @@ The report also includes:
 
 `analysis.topExpanders` suppresses expansion ratios when the receive baseline is too small, so tiny inbound payloads do not produce misleading ratios. In that case the report still shows `deltaBytes` and a `ratioStatus`.
 Suspect and alert entries include `summary`, `severity`, and evidence fields for quick triage.
+Alert entries also include a stable `id` for deduplication. Growth and runtime expansion thresholds can be overridden from node settings or HTTP query parameters when the defaults do not match your environment.
 
 Each profiler record keeps a small in-memory history ring buffer. The default limit is 10 samples. History entries contain:
 
@@ -136,6 +137,8 @@ It records samples by:
 
 Use a low sample rate in busy production systems. The leak lab example uses 100% sampling only so the behavior is easy to see locally.
 
+Adaptive sampling is available as an opt-in mode. When enabled, `runtime-profiler` can temporarily raise its sample rate during warning/critical alerts or high heap pressure. It is disabled by default, so existing flows keep their configured fixed sample rate.
+
 ### metrics-report
 
 Outputs current memory and profiler state as JSON or Prometheus text.
@@ -153,6 +156,8 @@ JSON output includes:
 - `profiler`: profiler records and analysis
 - `dashboard`: status, cards, and dashboard tables
 - `snapshots`: latest, previous, baseline, comparison, and optional experimental object diff
+
+Metrics JSON also includes profiler overhead estimates and async snapshot diff queue status when those features are enabled.
 
 Prometheus output includes memory gauges, heap pressure ratios, profiler record metrics, and low-cardinality analysis summary metrics:
 
@@ -177,6 +182,8 @@ Renders a `profiler-report` or `metrics-report` JSON payload into an HTML string
 
 This node does not depend on Node-RED Dashboard. Connect it to an HTTP Response node, Dashboard template node, or ui-template node.
 
+The generated HTML includes client-side search, severity filtering, and table sorting. Auto-refresh is optional and disabled by default.
+
 Typical HTTP flow:
 
 ```text
@@ -199,6 +206,23 @@ Default guard conditions:
 
 Manual GC still requires Node-RED to be started with `--expose-gc`. Without it, the node writes a structured skipped result to `msg.heapGuardian.autoGc`.
 
+### auto-snapshot-guard
+
+Writes a heap snapshot only when an incoming report contains qualifying alerts and current heap pressure is above the configured threshold.
+
+It is disabled by default and never runs on a background timer. It only evaluates when a message enters the node.
+
+Default guard conditions:
+
+- `enabled`: false
+- `requiredSeverity`: critical
+- heap threshold: 85%
+- cooldown: 300 seconds
+- max snapshots per hour: 3
+- async diff after snapshot: false
+
+The result is written to `msg.heapGuardian.autoSnapshot`. Optional async diff can be queued after a snapshot, but it is also disabled by default.
+
 ## Experimental Snapshot Diff
 
 `metrics-report` can compare the latest and previous V8 heap snapshot by constructor/type. This is opt-in because parsing heap snapshots can be expensive.
@@ -216,6 +240,14 @@ Defaults:
 - `snapshotDiffTimeoutMs`: 30000
 
 The diff returns `topAdded`, `topGrowing`, and `topRemoved` by constructor/type using `countDelta` and `selfSizeDelta`. Retainer paths and full dominator retained-size analysis are intentionally out of scope for this release.
+
+For safer HTTP endpoints, use async diff instead of blocking the metrics request:
+
+```text
+/heap-guardian/metrics?snapshotDiffAsyncEnabled=true
+```
+
+Async diff stores job status and latest results in Node-RED global context and exposes them under `snapshots.diffStatus`, `snapshots.diffQueue`, and `snapshots.latestDiffResult`.
 
 ## Persistent History
 
@@ -364,4 +396,5 @@ For a production setup, prefer one of these patterns:
 - Use heap snapshots sparingly because snapshot creation can pause Node-RED and temporarily increase memory pressure.
 - Treat `--expose-gc` as an optional diagnostic switch, not a fix for retained references.
 - Keep `auto-gc-guard` disabled until you have alert thresholds and heap pressure behavior that match your environment.
+- Keep `auto-snapshot-guard` and adaptive sampling disabled until you have tested their thresholds locally.
 - Disable high-cardinality Prometheus profiler record metrics if the label set is too large for your monitoring system.

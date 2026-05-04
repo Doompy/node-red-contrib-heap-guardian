@@ -42,11 +42,21 @@ function readReportOptions(msg, defaults) {
       ? defaults.includeProfilerRecordMetrics
       : query.includeProfilerRecordMetrics !== "false",
     maxPrometheusRecords: parseNumber(query.maxPrometheusRecords, defaults.maxPrometheusRecords),
+    warningGrowthSamples: parseNumber(query.warningGrowthSamples, defaults.warningGrowthSamples),
+    criticalGrowthSamples: parseNumber(query.criticalGrowthSamples, defaults.criticalGrowthSamples),
+    warningGrowthBytes: parseNumber(query.warningGrowthBytes, defaults.warningGrowthBytes),
+    criticalGrowthBytes: parseNumber(query.criticalGrowthBytes, defaults.criticalGrowthBytes),
+    warningExpansionBytes: parseNumber(query.warningExpansionBytes, defaults.warningExpansionBytes),
+    criticalExpansionBytes: parseNumber(query.criticalExpansionBytes, defaults.criticalExpansionBytes),
     snapshotDiffEnabled: query.snapshotDiffEnabled === undefined
       ? defaults.snapshotDiffEnabled
       : query.snapshotDiffEnabled === "true",
+    snapshotDiffAsyncEnabled: query.snapshotDiffAsyncEnabled === undefined
+      ? defaults.snapshotDiffAsyncEnabled
+      : query.snapshotDiffAsyncEnabled === "true",
     maxSnapshotDiffBytes: parseNumber(query.maxSnapshotDiffBytes, defaults.maxSnapshotDiffBytes),
     snapshotDiffTimeoutMs: parseNumber(query.snapshotDiffTimeoutMs, defaults.snapshotDiffTimeoutMs),
+    snapshotDiffLimit: parseNumber(query.snapshotDiffLimit, defaults.snapshotDiffLimit),
     filter
   };
 }
@@ -62,9 +72,17 @@ module.exports = function registerMetricsReport(RED) {
     const includeSpaces = config.includeSpaces === true || config.includeSpaces === "true";
     const includeProfilerRecordMetrics = config.includeProfilerRecordMetrics !== false && config.includeProfilerRecordMetrics !== "false";
     const maxPrometheusRecords = parseNumber(config.maxPrometheusRecords, limit);
+    const warningGrowthSamples = parseNumber(config.warningGrowthSamples, undefined);
+    const criticalGrowthSamples = parseNumber(config.criticalGrowthSamples, undefined);
+    const warningGrowthBytes = parseNumber(config.warningGrowthBytes, undefined);
+    const criticalGrowthBytes = parseNumber(config.criticalGrowthBytes, undefined);
+    const warningExpansionBytes = parseNumber(config.warningExpansionBytes, undefined);
+    const criticalExpansionBytes = parseNumber(config.criticalExpansionBytes, undefined);
     const snapshotDiffEnabled = config.snapshotDiffEnabled === true || config.snapshotDiffEnabled === "true";
+    const snapshotDiffAsyncEnabled = config.snapshotDiffAsyncEnabled === true || config.snapshotDiffAsyncEnabled === "true";
     const maxSnapshotDiffBytes = parseNumber(config.maxSnapshotDiffBytes, 128 * 1024 * 1024);
     const snapshotDiffTimeoutMs = parseNumber(config.snapshotDiffTimeoutMs, 30000);
+    const snapshotDiffLimit = parseNumber(config.snapshotDiffLimit, 20);
 
     node.on("input", (msg, send, done) => {
       const nodeSend = send || ((message) => node.send(message));
@@ -81,9 +99,17 @@ module.exports = function registerMetricsReport(RED) {
           sortBy,
           includeProfilerRecordMetrics,
           maxPrometheusRecords,
+          warningGrowthSamples,
+          criticalGrowthSamples,
+          warningGrowthBytes,
+          criticalGrowthBytes,
+          warningExpansionBytes,
+          criticalExpansionBytes,
           snapshotDiffEnabled,
+          snapshotDiffAsyncEnabled,
           maxSnapshotDiffBytes,
-          snapshotDiffTimeoutMs
+          snapshotDiffTimeoutMs,
+          snapshotDiffLimit
         });
         const report = createMetricsReport(
           node.context().global,

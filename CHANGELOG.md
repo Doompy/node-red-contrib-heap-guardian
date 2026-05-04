@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+
+- Add stable `analysis.alerts[].id` values for deduplication and downstream automation.
+- Add configurable alert thresholds for growth samples, growth bytes, and runtime expansion bytes.
+- Add profiler overhead summary with record count, history entry count, and estimated JSON bytes.
+- Add optional `heap-dashboard` auto-refresh plus client-side table search, severity filter, and sorting.
+- Add opt-in `auto-snapshot-guard` node for alert-driven heap snapshot capture.
+- Add opt-in async snapshot diff queue and expose diff job status/results in metrics JSON.
+- Add opt-in adaptive runtime profiler sampling for alerts or high heap pressure.
+- Include Korean README and changelog files in the npm package.
+
 ## 0.2.0
 
 - Add profiler history ring buffers, trend analysis, and leak alerts.

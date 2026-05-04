@@ -60,10 +60,15 @@ test("renderDashboardHtml returns standalone HTML", () => {
         ]
       }
     }
+  }, {
+    refreshSeconds: 30
   });
 
   assert.match(html, /<!doctype html>/);
   assert.match(html, /Heap Guardian/);
+  assert.match(html, /http-equiv="refresh" content="30"/);
+  assert.match(html, /id="hg-search"/);
+  assert.match(html, /id="hg-severity"/);
   assert.match(html, /Context Trends/);
   assert.match(html, /cache/);
 });

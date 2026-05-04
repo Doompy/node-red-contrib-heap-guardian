@@ -4,7 +4,8 @@
     color: "#E8DAEF",
     defaults: {
       name: { value: "" },
-      title: { value: "Heap Guardian" }
+      title: { value: "Heap Guardian" },
+      refreshSeconds: { value: 0, validate: RED.validators.number(true) }
     },
     inputs: 1,
     outputs: 1,
@@ -24,6 +25,11 @@
     <label for="node-input-title"><i class="fa fa-header"></i> Title</label>
     <input type="text" id="node-input-title" placeholder="Heap Guardian">
   </div>
+  <div class="form-row">
+    <label for="node-input-refreshSeconds"><i class="fa fa-refresh"></i> Refresh</label>
+    <input type="number" id="node-input-refreshSeconds" min="0" step="1" style="width:90px;">
+    <span>seconds, 0 disables auto-refresh</span>
+  </div>
 </script>
 
 <script type="text/html" data-help-name="heap-dashboard">
@@ -31,4 +37,5 @@
   <p>Connect it after <code>metrics-report</code> or <code>profiler-report</code>, then into an HTTP Response, Dashboard template, or ui-template node.</p>
   <p>Typical HTTP flow: <code>HTTP In -> metrics-report -> heap-dashboard -> HTTP Response</code>.</p>
   <p>This node has no Node-RED Dashboard package dependency.</p>
+  <p>Auto-refresh is disabled by default. Set refresh seconds only for pages that should reload themselves.</p>
 </script>

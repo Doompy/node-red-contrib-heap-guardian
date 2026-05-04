@@ -1,5 +1,16 @@
 # 변경 내역
 
+## 0.2.1
+
+- downstream automation과 deduplication을 위해 stable `analysis.alerts[].id` 값을 추가했습니다.
+- growth sample 수, growth bytes, runtime expansion bytes 기준 alert threshold를 설정할 수 있게 했습니다.
+- record count, history entry count, estimated JSON bytes를 포함한 profiler overhead summary를 추가했습니다.
+- `heap-dashboard`에 optional auto-refresh와 client-side table search, severity filter, sorting을 추가했습니다.
+- alert 기반 heap snapshot capture를 위한 opt-in `auto-snapshot-guard` node를 추가했습니다.
+- opt-in async snapshot diff queue를 추가하고 metrics JSON에 diff job status/result를 노출했습니다.
+- alert 또는 high heap pressure 상황에서 runtime profiler sampling rate를 올리는 opt-in adaptive sampling을 추가했습니다.
+- npm package에 한국어 README와 changelog 파일을 포함했습니다.
+
 ## 0.2.0
 
 - profiler history ring buffer, trend analysis, leak alert를 추가했습니다.

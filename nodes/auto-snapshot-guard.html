@@ -1,0 +1,80 @@
+<script type="text/javascript">
+  RED.nodes.registerType("auto-snapshot-guard", {
+    category: "system",
+    color: "#FAD7A0",
+    defaults: {
+      name: { value: "" },
+      enabled: { value: false },
+      requiredSeverity: { value: "critical" },
+      threshold: { value: 85, validate: RED.validators.number(true) },
+      cooldownSeconds: { value: 300, validate: RED.validators.number(true) },
+      maxSnapshotsPerHour: { value: 3, validate: RED.validators.number(true) },
+      directory: { value: "/data/heap-snapshots" },
+      label: { value: "auto" },
+      diffAfterSnapshot: { value: false },
+      includeSpaces: { value: false }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-camera",
+    label: function () {
+      return this.name || "auto snapshot guard";
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="auto-snapshot-guard">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-enabled"><i class="fa fa-power-off"></i> Enabled</label>
+    <input type="checkbox" id="node-input-enabled" style="display:inline-block; width:auto; vertical-align:top;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-requiredSeverity"><i class="fa fa-warning"></i> Severity</label>
+    <select id="node-input-requiredSeverity" style="width:70%;">
+      <option value="critical">Critical only</option>
+      <option value="warning">Warning or critical</option>
+      <option value="info">Any alert</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-threshold"><i class="fa fa-tachometer"></i> Heap</label>
+    <input type="number" id="node-input-threshold" min="0" step="1" style="width:90px;">
+    <span>% threshold</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-cooldownSeconds"><i class="fa fa-clock-o"></i> Cooldown</label>
+    <input type="number" id="node-input-cooldownSeconds" min="0" step="1" style="width:100px;">
+    <span>seconds</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-maxSnapshotsPerHour"><i class="fa fa-repeat"></i> Hour max</label>
+    <input type="number" id="node-input-maxSnapshotsPerHour" min="0" step="1" style="width:80px;">
+  </div>
+  <div class="form-row">
+    <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
+    <input type="text" id="node-input-directory" placeholder="/data/heap-snapshots">
+  </div>
+  <div class="form-row">
+    <label for="node-input-label"><i class="fa fa-file"></i> Label</label>
+    <input type="text" id="node-input-label" placeholder="auto">
+  </div>
+  <div class="form-row">
+    <label for="node-input-diffAfterSnapshot"><i class="fa fa-random"></i> Diff</label>
+    <input type="checkbox" id="node-input-diffAfterSnapshot" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Queue async diff after snapshot</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-includeSpaces"><i class="fa fa-cubes"></i> Spaces</label>
+    <input type="checkbox" id="node-input-includeSpaces" style="display:inline-block; width:auto; vertical-align:top;">
+  </div>
+</script>
+
+<script type="text/html" data-help-name="auto-snapshot-guard">
+  <p>Optionally writes a heap snapshot when a profiler report contains qualifying alerts and heap pressure is above threshold.</p>
+  <p>It is disabled by default and never runs in the background. It only evaluates when a message arrives.</p>
+  <p>Enable async diff only when snapshot files are small enough for your configured diff limits.</p>
+</script>

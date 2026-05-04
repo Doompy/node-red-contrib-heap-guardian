@@ -49,6 +49,8 @@ test("createPrometheusMetrics includes memory and profiler metrics", () => {
 
   assert.equal(report.profiler.analysis.topGrowers.length, 0);
   assert.equal(report.dashboard.status, "info");
+  assert.equal(report.summary.profiler.overhead.recordCount, 1);
+  assert.equal(report.snapshots.diffStatus, "idle");
   assert.match(text, /heap_guardian_memory_bytes\{type="heap_used"\}/);
   assert.match(text, /heap_guardian_profiler_records 1/);
   assert.match(text, /heap_guardian_profiler_alerts\{severity="warning"\} 0/);

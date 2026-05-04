@@ -11,14 +11,23 @@ function readProjectFile(filePath) {
   return fs.readFileSync(path.join(projectRoot, filePath), "utf8");
 }
 
-test("new 0.2.0 numeric editor fields are optional for imported flows", () => {
+test("new numeric editor fields are optional for imported flows", () => {
   const metricsHtml = readProjectFile(path.join("nodes", "metrics-report.html"));
   const autoGcHtml = readProjectFile(path.join("nodes", "auto-gc-guard.html"));
+  const autoSnapshotHtml = readProjectFile(path.join("nodes", "auto-snapshot-guard.html"));
+  const dashboardHtml = readProjectFile(path.join("nodes", "heap-dashboard.html"));
 
   [
     "maxPrometheusRecords",
+    "warningGrowthSamples",
+    "criticalGrowthSamples",
+    "warningGrowthBytes",
+    "criticalGrowthBytes",
+    "warningExpansionBytes",
+    "criticalExpansionBytes",
     "maxSnapshotDiffBytes",
-    "snapshotDiffTimeoutMs"
+    "snapshotDiffTimeoutMs",
+    "snapshotDiffLimit"
   ].forEach((field) => {
     assert.match(
       metricsHtml,
@@ -36,6 +45,19 @@ test("new 0.2.0 numeric editor fields are optional for imported flows", () => {
       new RegExp(`${field}: \\{ value: .*validate: RED\\.validators\\.number\\(true\\) \\}`)
     );
   });
+
+  [
+    "threshold",
+    "cooldownSeconds",
+    "maxSnapshotsPerHour"
+  ].forEach((field) => {
+    assert.match(
+      autoSnapshotHtml,
+      new RegExp(`${field}: \\{ value: .*validate: RED\\.validators\\.number\\(true\\) \\}`)
+    );
+  });
+
+  assert.match(dashboardHtml, /refreshSeconds: \{ value: 0, validate: RED\.validators\.number\(true\) \}/);
 });
 
 test("leak lab metrics nodes include 0.2.0 default fields", () => {
@@ -48,7 +70,9 @@ test("leak lab metrics nodes include 0.2.0 default fields", () => {
     assert.equal(node.includeProfilerRecordMetrics, true);
     assert.equal(node.maxPrometheusRecords, 20);
     assert.equal(node.snapshotDiffEnabled, false);
+    assert.equal(node.snapshotDiffAsyncEnabled, false);
     assert.equal(node.maxSnapshotDiffBytes, 134217728);
     assert.equal(node.snapshotDiffTimeoutMs, 30000);
+    assert.equal(node.snapshotDiffLimit, 20);
   });
 });

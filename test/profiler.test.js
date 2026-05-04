@@ -291,8 +291,48 @@ test("getProfilerReport analysis returns trends and alerts", () => {
   assert.equal(trend.totalGrowthBytes, 3 * 1024 * 1024);
   assert.equal(alert.severity, "warning");
   assert.equal(alert.kind, "context-growth");
+  assert.equal(alert.id, "context-growth|flow-1|node-1|global|heapGuardianLeak|heapGuardianLeak");
   assert.match(alert.summary, /heapGuardianLeak grew by 3MB/);
+  assert.equal(alert.evidence.thresholds.warningGrowthBytes, 1024 * 1024);
+  assert.equal(report.overhead.recordCount, 1);
+  assert.equal(report.overhead.historyEntryCount, 4);
+  assert.ok(report.overhead.estimatedJsonBytes > 0);
   assert.equal(report.dashboard.status, "warning");
+});
+
+test("getProfilerReport supports configurable alert thresholds", () => {
+  const context = createContext();
+  const meta = {
+    flowId: "flow-1",
+    flowName: "Flow 1",
+    nodeId: "node-1",
+    nodeName: "profile context",
+    nodeType: "context-profiler"
+  };
+
+  [512 * 1024, 768 * 1024].forEach((bytes, index) => {
+    recordProfile(context, meta, {
+      kind: "context",
+      scope: "global",
+      property: "cache",
+      contextKey: "cache",
+      bytes,
+      type: "array"
+    }, {
+      now: new Date(`2026-05-03T00:0${index}:00.000Z`)
+    });
+  });
+
+  const defaultReport = getProfilerReport(context, { limit: 10 });
+  const tunedReport = getProfilerReport(context, {
+    limit: 10,
+    warningGrowthSamples: 1,
+    warningGrowthBytes: 10 * 1024 * 1024
+  });
+
+  assert.equal(defaultReport.analysis.alerts.length, 0);
+  assert.equal(tunedReport.analysis.alerts[0].severity, "warning");
+  assert.equal(tunedReport.analysis.options.warningGrowthSamples, 1);
 });
 
 test("getProfilerReport analysis compares runtime send and receive payload sizes", () => {

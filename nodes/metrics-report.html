@@ -10,9 +10,17 @@
       includeSpaces: { value: false },
       includeProfilerRecordMetrics: { value: true },
       maxPrometheusRecords: { value: 20, validate: RED.validators.number(true) },
+      warningGrowthSamples: { value: "", validate: RED.validators.number(true) },
+      criticalGrowthSamples: { value: "", validate: RED.validators.number(true) },
+      warningGrowthBytes: { value: "", validate: RED.validators.number(true) },
+      criticalGrowthBytes: { value: "", validate: RED.validators.number(true) },
+      warningExpansionBytes: { value: "", validate: RED.validators.number(true) },
+      criticalExpansionBytes: { value: "", validate: RED.validators.number(true) },
       snapshotDiffEnabled: { value: false },
+      snapshotDiffAsyncEnabled: { value: false },
       maxSnapshotDiffBytes: { value: 134217728, validate: RED.validators.number(true) },
-      snapshotDiffTimeoutMs: { value: 30000, validate: RED.validators.number(true) }
+      snapshotDiffTimeoutMs: { value: 30000, validate: RED.validators.number(true) },
+      snapshotDiffLimit: { value: 20, validate: RED.validators.number(true) }
     },
     inputs: 1,
     outputs: 1,
@@ -63,9 +71,42 @@
     <input type="number" id="node-input-maxPrometheusRecords" min="0" step="1" style="width:100px;">
   </div>
   <div class="form-row">
+    <label for="node-input-warningGrowthSamples"><i class="fa fa-warning"></i> Warn samples</label>
+    <input type="number" id="node-input-warningGrowthSamples" min="1" step="1" style="width:90px;" placeholder="3">
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalGrowthSamples"><i class="fa fa-warning"></i> Crit samples</label>
+    <input type="number" id="node-input-criticalGrowthSamples" min="1" step="1" style="width:90px;" placeholder="5">
+  </div>
+  <div class="form-row">
+    <label for="node-input-warningGrowthBytes"><i class="fa fa-database"></i> Warn growth</label>
+    <input type="number" id="node-input-warningGrowthBytes" min="0" step="1" style="width:140px;" placeholder="1048576">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalGrowthBytes"><i class="fa fa-database"></i> Crit growth</label>
+    <input type="number" id="node-input-criticalGrowthBytes" min="0" step="1" style="width:140px;" placeholder="8388608">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-warningExpansionBytes"><i class="fa fa-expand"></i> Warn expand</label>
+    <input type="number" id="node-input-warningExpansionBytes" min="0" step="1" style="width:140px;" placeholder="1048576">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-criticalExpansionBytes"><i class="fa fa-expand"></i> Crit expand</label>
+    <input type="number" id="node-input-criticalExpansionBytes" min="0" step="1" style="width:140px;" placeholder="8388608">
+    <span>bytes</span>
+  </div>
+  <div class="form-row">
     <label for="node-input-snapshotDiffEnabled"><i class="fa fa-flask"></i> Diff</label>
     <input type="checkbox" id="node-input-snapshotDiffEnabled" style="display:inline-block; width:auto; vertical-align:top;">
     <span>Enable experimental snapshot object diff in JSON output</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-snapshotDiffAsyncEnabled"><i class="fa fa-random"></i> Async diff</label>
+    <input type="checkbox" id="node-input-snapshotDiffAsyncEnabled" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Queue snapshot diff job instead of blocking the report</span>
   </div>
   <div class="form-row">
     <label for="node-input-maxSnapshotDiffBytes"><i class="fa fa-file"></i> Diff max</label>
@@ -77,6 +118,10 @@
     <input type="number" id="node-input-snapshotDiffTimeoutMs" min="1" step="1" style="width:120px;">
     <span>ms</span>
   </div>
+  <div class="form-row">
+    <label for="node-input-snapshotDiffLimit"><i class="fa fa-list"></i> Diff limit</label>
+    <input type="number" id="node-input-snapshotDiffLimit" min="1" step="1" style="width:100px;">
+  </div>
 </script>
 
 <script type="text/html" data-help-name="metrics-report">
@@ -84,5 +129,7 @@
   <p>Place it behind an HTTP In node to expose an operational metrics endpoint.</p>
   <p>JSON output includes profiler analysis, dashboard summary, and snapshot metadata. Prometheus output includes alert, suspect, and trend summary metrics.</p>
   <p>Set <code>includeProfilerRecordMetrics=false</code> to suppress high-cardinality profiler record metrics in Prometheus output.</p>
+  <p>Alert threshold fields are optional. Leave them blank to use the built-in defaults.</p>
   <p>Set <code>snapshotDiffEnabled=true</code> only when you want the experimental constructor/type heap snapshot diff in JSON output.</p>
+  <p>Set <code>snapshotDiffAsyncEnabled=true</code> to queue the diff and return job status instead of blocking the metrics request.</p>
 </script>

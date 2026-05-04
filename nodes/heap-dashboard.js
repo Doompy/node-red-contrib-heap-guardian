@@ -8,6 +8,9 @@ module.exports = function registerHeapDashboard(RED) {
 
     const node = this;
     const title = config.title || config.name || "Heap Guardian";
+    const refreshSeconds = Number.isFinite(Number(config.refreshSeconds))
+      ? Math.max(0, Number(config.refreshSeconds))
+      : 0;
 
     node.on("input", (msg, send, done) => {
       const nodeSend = send || ((message) => node.send(message));
@@ -18,7 +21,10 @@ module.exports = function registerHeapDashboard(RED) {
       });
 
       try {
-        msg.payload = renderDashboardHtml(msg.payload || {}, { title });
+        msg.payload = renderDashboardHtml(msg.payload || {}, {
+          title,
+          refreshSeconds
+        });
         msg.headers = {
           ...(msg.headers || {}),
           "content-type": "text/html; charset=utf-8"

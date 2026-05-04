@@ -14,6 +14,11 @@
       maxKeyRecords: { value: 10, validate: RED.validators.number() },
       maxKeyScan: { value: 50, validate: RED.validators.number() },
       maxRecords: { value: 1000, validate: RED.validators.number() },
+      adaptiveSamplingEnabled: { value: false },
+      adaptiveWarningSampleRate: { value: 50, validate: RED.validators.number(true) },
+      adaptiveCriticalSampleRate: { value: 100, validate: RED.validators.number(true) },
+      adaptiveHeapThreshold: { value: 85, validate: RED.validators.number(true) },
+      adaptiveDecisionTtlMs: { value: 2000, validate: RED.validators.number(true) },
       excludePackageNodes: { value: true },
       includeNodeTypes: { value: "" },
       excludeNodeTypes: { value: "" }
@@ -91,6 +96,31 @@
     <label for="node-input-maxRecords"><i class="fa fa-table"></i> Records</label>
     <input type="number" id="node-input-maxRecords" min="1" step="1" style="width:100px;">
   </div>
+  <div class="form-row">
+    <label for="node-input-adaptiveSamplingEnabled"><i class="fa fa-random"></i> Adaptive</label>
+    <input type="checkbox" id="node-input-adaptiveSamplingEnabled" style="display:inline-block; width:auto; vertical-align:top;">
+    <span>Increase sample rate during alerts or high heap pressure</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-adaptiveWarningSampleRate"><i class="fa fa-percent"></i> Warn sample</label>
+    <input type="number" id="node-input-adaptiveWarningSampleRate" min="0" max="100" step="1" style="width:90px;">
+    <span>%</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-adaptiveCriticalSampleRate"><i class="fa fa-percent"></i> Crit sample</label>
+    <input type="number" id="node-input-adaptiveCriticalSampleRate" min="0" max="100" step="1" style="width:90px;">
+    <span>%</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-adaptiveHeapThreshold"><i class="fa fa-tachometer"></i> Heap trigger</label>
+    <input type="number" id="node-input-adaptiveHeapThreshold" min="0" max="100" step="1" style="width:90px;">
+    <span>%</span>
+  </div>
+  <div class="form-row">
+    <label for="node-input-adaptiveDecisionTtlMs"><i class="fa fa-clock-o"></i> Decision TTL</label>
+    <input type="number" id="node-input-adaptiveDecisionTtlMs" min="250" step="250" style="width:100px;">
+    <span>ms</span>
+  </div>
 </script>
 
 <script type="text/html" data-help-name="runtime-profiler">
@@ -98,4 +128,5 @@
   <p>Samples are aggregated in the Heap Guardian profiler report by flow name, source/target node, direction, and property.</p>
   <p>Top keys records estimate the largest immediate child properties for sampled payloads.</p>
   <p>Use a low sample rate in busy systems to avoid profiling overhead.</p>
+  <p>Adaptive sampling is disabled by default. When enabled, it temporarily raises the sample rate during profiler alerts or high heap pressure.</p>
 </script>
